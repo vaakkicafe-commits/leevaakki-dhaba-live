@@ -1,0 +1,5 @@
+# Ignore source files and only deploy the built Flutter web output
+*
+!build/web/**
+!vercel.json
+!.vercelignore

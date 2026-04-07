@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "flutter build web --release --web-renderer canvaskit",
+  "buildCommand": "",
+  "installCommand": "",
   "outputDirectory": "build/web",
   "env": {
     "FLUTTER_MODE": "release"
