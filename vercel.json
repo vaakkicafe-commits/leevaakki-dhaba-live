@@ -1,8 +1,5 @@
 {
   "installCommand": "if [ ! -d \"$HOME/flutter\" ]; then git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter; fi && $HOME/flutter/bin/flutter config --enable-web",
   "buildCommand": "$HOME/flutter/bin/flutter build web --release",
-  "outputDirectory": "build/web",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
-  ]
+  "outputDirectory": "build/web"
 }
