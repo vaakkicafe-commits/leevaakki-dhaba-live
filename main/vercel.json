@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "installCommand": "git clone --depth 1 https://github.com/flutter/flutter.git -b stable",
-  "buildCommand": "./flutter/bin/flutter config --enable-web && ./flutter/bin/flutter build web --release",
+  "installCommand": "git clone --depth 1 https://github.com -b stable $HOME/flutter-sdk",
+  "buildCommand": "$HOME/flutter-sdk/bin/flutter config --enable-web && $HOME/flutter-sdk/bin/flutter build web --release",
   "outputDirectory": "build/web",
   "rewrites": [
     {
