@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "installCommand": "if [ ! -d \"flutter\" ]; then git clone https://github.com/flutter/flutter.git -b stable; fi && ./flutter/bin/flutter doctor && ./flutter/bin/flutter config --enable-web",
+  "installCommand": "git clone https://github.com -b stable && ./flutter/bin/flutter doctor && ./flutter/bin/flutter config --enable-web",
   "buildCommand": "./flutter/bin/flutter build web --release",
   "outputDirectory": "build/web",
   "rewrites": [
