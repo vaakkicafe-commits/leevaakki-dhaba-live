@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "/Users/vaakki/Documents/flutter_sdk/bin/flutter build web --release --web-renderer canvaskit",
+  "buildCommand": "flutter build web --release --web-renderer canvaskit",
   "outputDirectory": "build/web",
   "env": {
     "FLUTTER_MODE": "release"
