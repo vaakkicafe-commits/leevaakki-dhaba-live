@@ -1,0 +1,6 @@
+{
+  "framework": null,
+  "buildCommand": "$HOME/flutter/bin/flutter build web --release",
+  "outputDirectory": "build/web",
+  "installCommand": "flutter --version || (git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter)"
+}
