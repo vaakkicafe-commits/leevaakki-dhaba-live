@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "installCommand": "git clone https://github.com -b stable && ./flutter/bin/flutter doctor && ./flutter/bin/flutter config --enable-web",
+  "buildCommand": "./flutter/bin/flutter build web --release",
+  "outputDirectory": "build/web",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
