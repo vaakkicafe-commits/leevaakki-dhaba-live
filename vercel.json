@@ -1,9 +1,5 @@
 {
-  "version": 2,
-  "buildCommand": "",
-  "installCommand": "",
-  "outputDirectory": "build/web",
-  "env": {
-    "FLUTTER_MODE": "release"
-  }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
+  ]
 }
