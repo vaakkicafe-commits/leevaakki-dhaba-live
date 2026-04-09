@@ -171,7 +171,7 @@ const Navbar = () => {
       <div className="navbar-container">
         <Link to="/" className="navbar-logo" data-testid="logo">
           <span className="logo-icon">🍛</span>
-          <span className="logo-text">Lee Vaakki</span>
+          <span className="logo-text">Lee Vaakki Dhaba</span>
         </Link>
 
         <div className="navbar-links">
