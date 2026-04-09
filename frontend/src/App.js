@@ -3,11 +3,66 @@ import "@/App.css";
 import "@/components/AdminDashboard.css";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Link } from "react-router-dom";
 import axios from "axios";
-import { ShoppingCart, User, MapPin, Clock, Phone, ChevronRight, Plus, Minus, Trash2, X, Check, Search, Star, Flame, Leaf, Menu as MenuIcon, Home, Package, LogOut, Settings, Utensils, ChefHat, Croissant, Gift, Coffee, IceCream2 } from "lucide-react";
+import { ShoppingCart, User, MapPin, Clock, Phone, ChevronRight, Plus, Minus, Trash2, X, Check, Search, Star, Flame, Leaf, Menu as MenuIcon, Home, Package, LogOut, Settings, Utensils, ChefHat, Croissant, Gift, Coffee, IceCream2, Download, Smartphone } from "lucide-react";
 import AdminDashboard from "@/components/AdminDashboard";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// PWA Install Prompt
+const InstallPrompt = () => {
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [showPrompt, setShowPrompt] = useState(false);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      // Show prompt after 30 seconds on the site
+      setTimeout(() => setShowPrompt(true), 30000);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowPrompt(false);
+    }
+    
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      setShowPrompt(false);
+    }
+    setInstallPrompt(null);
+  };
+
+  if (!showPrompt || !installPrompt) return null;
+
+  return (
+    <div className="install-prompt" data-testid="install-prompt">
+      <div className="install-content">
+        <Smartphone size={24} />
+        <div className="install-text">
+          <strong>Install Lee Vaakki App</strong>
+          <span>Quick access, works offline!</span>
+        </div>
+      </div>
+      <div className="install-actions">
+        <button className="install-btn" onClick={handleInstall}>
+          <Download size={16} /> Install
+        </button>
+        <button className="dismiss-btn" onClick={() => setShowPrompt(false)}>
+          <X size={16} />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // Auth Context
 const AuthContext = createContext(null);
@@ -982,6 +1037,7 @@ function App() {
       <CartProvider>
         <BrowserRouter>
           <div className="App">
+            <InstallPrompt />
             <Navbar />
             <main className="main-content">
               <Routes>
