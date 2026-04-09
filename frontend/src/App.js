@@ -161,36 +161,44 @@ const Navbar = () => {
   );
 };
 
-const Footer = () => (
-  <footer className="footer">
-    <div className="footer-container">
-      <div className="footer-section">
-        <h4>Lee Vaakki Dhaba</h4>
-        <p>Authentic North Indian Cuisine since 1985</p>
-        <div className="footer-contact">
-          <p><Phone size={16} /> +91 98765 43210</p>
-          <p><MapPin size={16} /> NH-44, Near Murthal, Haryana</p>
-          <p><Clock size={16} /> Open 24 Hours</p>
+const Footer = () => {
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    axios.get(`${API}/settings`).then(res => setSettings(res.data)).catch(() => {});
+  }, []);
+
+  return (
+    <footer className="footer">
+      <div className="footer-container">
+        <div className="footer-section">
+          <h4>{settings?.restaurant_name || "Lee Vaakki Dhaba"}</h4>
+          <p>{settings?.tagline || "Authentic North Indian Cuisine since 1985"}</p>
+          <div className="footer-contact">
+            <p><Phone size={16} /> {settings?.phone || "+91 98765 43210"}</p>
+            <p><MapPin size={16} /> {settings?.address_line || "NH-44, Near Murthal"}, {settings?.city || "Haryana"}</p>
+            <p><Clock size={16} /> {settings?.opening_hours || "Open 24 Hours"}</p>
+          </div>
+        </div>
+        <div className="footer-section">
+          <h4>Quick Links</h4>
+          <Link to="/menu">Menu</Link>
+          <Link to="/track">Track Order</Link>
+          <Link to="/about">About Us</Link>
+        </div>
+        <div className="footer-section">
+          <h4>Legal</h4>
+          <a href="#">Terms of Service</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Refund Policy</a>
         </div>
       </div>
-      <div className="footer-section">
-        <h4>Quick Links</h4>
-        <Link to="/menu">Menu</Link>
-        <Link to="/track">Track Order</Link>
-        <Link to="/about">About Us</Link>
+      <div className="footer-bottom">
+        <p>© 2024 {settings?.restaurant_name || "Lee Vaakki Dhaba"}. All rights reserved.</p>
       </div>
-      <div className="footer-section">
-        <h4>Legal</h4>
-        <a href="#">Terms of Service</a>
-        <a href="#">Privacy Policy</a>
-        <a href="#">Refund Policy</a>
-      </div>
-    </div>
-    <div className="footer-bottom">
-      <p>© 2024 Lee Vaakki Dhaba. All rights reserved.</p>
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 // Pages
 const HomePage = () => {

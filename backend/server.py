@@ -569,6 +569,49 @@ async def seed_database():
     
     return {"message": "Database seeded successfully", "menu_items": len(menu_items), "admin_email": "admin@leevaakki.com", "admin_password": "admin123"}
 
+# ============== SETTINGS ROUTES ==============
+
+class RestaurantSettings(BaseModel):
+    restaurant_name: str = "Lee Vaakki Dhaba"
+    tagline: str = "Authentic North Indian Cuisine"
+    phone: str = "+91 98765 43210"
+    whatsapp: str = "919876543210"
+    email: str = "info@leevaakkidhaba.com"
+    address_line: str = "NH-44, Near Murthal"
+    city: str = "Sonipat"
+    state: str = "Haryana"
+    pincode: str = "131001"
+    opening_hours: str = "Open 24 Hours"
+    upi_id: str = "leevaakkidhaba@upi"
+    google_maps_url: str = "https://maps.google.com/?q=Lee+Vaakki+Dhaba+Murthal"
+    facebook_url: str = ""
+    instagram_url: str = ""
+    delivery_radius_km: int = 10
+    min_order_amount: float = 200
+    delivery_fee: float = 40
+
+@api_router.get("/settings")
+async def get_settings():
+    settings = await db.settings.find_one({"type": "restaurant"}, {"_id": 0})
+    if not settings:
+        # Return defaults
+        return RestaurantSettings().model_dump()
+    return settings
+
+@api_router.put("/admin/settings")
+async def update_settings(settings: RestaurantSettings, admin = Depends(get_admin_user)):
+    settings_doc = {
+        "type": "restaurant",
+        **settings.model_dump(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.settings.update_one(
+        {"type": "restaurant"},
+        {"$set": settings_doc},
+        upsert=True
+    )
+    return {"message": "Settings updated successfully"}
+
 @api_router.get("/")
 async def root():
     return {"message": "Lee Vaakki Dhaba API", "version": "1.0.0"}

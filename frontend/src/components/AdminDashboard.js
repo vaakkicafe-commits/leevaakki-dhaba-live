@@ -5,7 +5,8 @@ import {
   LayoutDashboard, Package, UtensilsCrossed, Ticket, Users, TrendingUp, 
   Clock, CheckCircle, Truck, ChefHat, XCircle, Eye, Edit, Trash2, Plus,
   IndianRupee, ShoppingBag, ArrowUp, ArrowDown, RefreshCw, Search,
-  Filter, MoreVertical, X, Save, Leaf, Image, Bell, Volume2, VolumeX
+  Filter, MoreVertical, X, Save, Leaf, Image, Bell, Volume2, VolumeX,
+  Settings, MapPin, Phone, Mail, Globe, MessageCircle
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -175,6 +176,7 @@ const AdminDashboard = ({ user, token }) => {
     { id: "orders", label: "Orders", icon: Package },
     { id: "menu", label: "Menu", icon: UtensilsCrossed },
     { id: "coupons", label: "Coupons", icon: Ticket },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   if (!authChecked || loading) {
@@ -265,6 +267,7 @@ const AdminDashboard = ({ user, token }) => {
           {activeTab === "orders" && <OrdersTab orders={orders} token={token} onUpdate={fetchData} />}
           {activeTab === "menu" && <MenuTab menuItems={menuItems} token={token} onUpdate={fetchData} />}
           {activeTab === "coupons" && <CouponsTab token={token} />}
+          {activeTab === "settings" && <SettingsTab token={token} />}
         </div>
       </main>
     </div>
@@ -828,6 +831,268 @@ const StatusBadge = ({ status }) => {
     <span className="status-badge" style={{ background: `${config.color}20`, color: config.color }}>
       <Icon size={14} /> {config.label}
     </span>
+  );
+};
+
+// Settings Tab
+const SettingsTab = ({ token }) => {
+  const [settings, setSettings] = useState({
+    restaurant_name: "Lee Vaakki Dhaba",
+    tagline: "Authentic North Indian Cuisine",
+    phone: "+91 98765 43210",
+    whatsapp: "919876543210",
+    email: "info@leevaakkidhaba.com",
+    address_line: "NH-44, Near Murthal",
+    city: "Sonipat",
+    state: "Haryana",
+    pincode: "131001",
+    opening_hours: "Open 24 Hours",
+    upi_id: "leevaakkidhaba@upi",
+    google_maps_url: "https://maps.google.com/?q=Lee+Vaakki+Dhaba+Murthal",
+    facebook_url: "",
+    instagram_url: "",
+    delivery_radius_km: 10,
+    min_order_amount: 200,
+    delivery_fee: 40
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await axios.get(`${API}/settings`);
+      setSettings(prev => ({ ...prev, ...res.data }));
+    } catch (err) {
+      console.log("Using default settings");
+    }
+    setLoading(false);
+  };
+
+  const saveSettings = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API}/admin/settings`, settings, { headers: { Authorization: `Bearer ${token}` } });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      alert("Failed to save settings");
+    }
+    setSaving(false);
+  };
+
+  if (loading) {
+    return <div className="settings-loading"><RefreshCw className="spin" size={24} /> Loading settings...</div>;
+  }
+
+  return (
+    <div className="settings-tab">
+      {saved && (
+        <div className="save-success">
+          <CheckCircle size={18} /> Settings saved successfully!
+        </div>
+      )}
+
+      {/* Restaurant Info */}
+      <div className="settings-section">
+        <h3><Globe size={20} /> Restaurant Information</h3>
+        <div className="settings-grid">
+          <div className="setting-group">
+            <label>Restaurant Name</label>
+            <input 
+              type="text" 
+              value={settings.restaurant_name} 
+              onChange={e => setSettings({ ...settings, restaurant_name: e.target.value })}
+              placeholder="Your Restaurant Name"
+            />
+          </div>
+          <div className="setting-group">
+            <label>Tagline</label>
+            <input 
+              type="text" 
+              value={settings.tagline} 
+              onChange={e => setSettings({ ...settings, tagline: e.target.value })}
+              placeholder="Short description"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Details */}
+      <div className="settings-section">
+        <h3><Phone size={20} /> Contact Details</h3>
+        <div className="settings-grid">
+          <div className="setting-group">
+            <label>Phone Number</label>
+            <input 
+              type="tel" 
+              value={settings.phone} 
+              onChange={e => setSettings({ ...settings, phone: e.target.value })}
+              placeholder="+91 98765 43210"
+            />
+          </div>
+          <div className="setting-group">
+            <label>WhatsApp Number (for notifications)</label>
+            <input 
+              type="text" 
+              value={settings.whatsapp} 
+              onChange={e => setSettings({ ...settings, whatsapp: e.target.value })}
+              placeholder="919876543210"
+            />
+            <small>Without + sign, e.g., 919876543210</small>
+          </div>
+          <div className="setting-group">
+            <label>Email</label>
+            <input 
+              type="email" 
+              value={settings.email} 
+              onChange={e => setSettings({ ...settings, email: e.target.value })}
+              placeholder="info@restaurant.com"
+            />
+          </div>
+          <div className="setting-group">
+            <label>Opening Hours</label>
+            <input 
+              type="text" 
+              value={settings.opening_hours} 
+              onChange={e => setSettings({ ...settings, opening_hours: e.target.value })}
+              placeholder="Open 24 Hours"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Address */}
+      <div className="settings-section">
+        <h3><MapPin size={20} /> Location & Address</h3>
+        <div className="settings-grid">
+          <div className="setting-group full-width">
+            <label>Address Line</label>
+            <input 
+              type="text" 
+              value={settings.address_line} 
+              onChange={e => setSettings({ ...settings, address_line: e.target.value })}
+              placeholder="Street address"
+            />
+          </div>
+          <div className="setting-group">
+            <label>City</label>
+            <input 
+              type="text" 
+              value={settings.city} 
+              onChange={e => setSettings({ ...settings, city: e.target.value })}
+              placeholder="City"
+            />
+          </div>
+          <div className="setting-group">
+            <label>State</label>
+            <input 
+              type="text" 
+              value={settings.state} 
+              onChange={e => setSettings({ ...settings, state: e.target.value })}
+              placeholder="State"
+            />
+          </div>
+          <div className="setting-group">
+            <label>Pincode</label>
+            <input 
+              type="text" 
+              value={settings.pincode} 
+              onChange={e => setSettings({ ...settings, pincode: e.target.value })}
+              placeholder="Pincode"
+            />
+          </div>
+          <div className="setting-group">
+            <label>Google Maps URL</label>
+            <input 
+              type="url" 
+              value={settings.google_maps_url} 
+              onChange={e => setSettings({ ...settings, google_maps_url: e.target.value })}
+              placeholder="https://maps.google.com/..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Payment & Delivery */}
+      <div className="settings-section">
+        <h3><IndianRupee size={20} /> Payment & Delivery</h3>
+        <div className="settings-grid">
+          <div className="setting-group">
+            <label>UPI ID (for payments)</label>
+            <input 
+              type="text" 
+              value={settings.upi_id} 
+              onChange={e => setSettings({ ...settings, upi_id: e.target.value })}
+              placeholder="yourname@upi"
+            />
+          </div>
+          <div className="setting-group">
+            <label>Delivery Radius (km)</label>
+            <input 
+              type="number" 
+              value={settings.delivery_radius_km} 
+              onChange={e => setSettings({ ...settings, delivery_radius_km: parseInt(e.target.value) || 0 })}
+              placeholder="10"
+            />
+          </div>
+          <div className="setting-group">
+            <label>Minimum Order Amount (₹)</label>
+            <input 
+              type="number" 
+              value={settings.min_order_amount} 
+              onChange={e => setSettings({ ...settings, min_order_amount: parseFloat(e.target.value) || 0 })}
+              placeholder="200"
+            />
+          </div>
+          <div className="setting-group">
+            <label>Delivery Fee (₹)</label>
+            <input 
+              type="number" 
+              value={settings.delivery_fee} 
+              onChange={e => setSettings({ ...settings, delivery_fee: parseFloat(e.target.value) || 0 })}
+              placeholder="40"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Social Media */}
+      <div className="settings-section">
+        <h3><MessageCircle size={20} /> Social Media</h3>
+        <div className="settings-grid">
+          <div className="setting-group">
+            <label>Facebook Page URL</label>
+            <input 
+              type="url" 
+              value={settings.facebook_url} 
+              onChange={e => setSettings({ ...settings, facebook_url: e.target.value })}
+              placeholder="https://facebook.com/..."
+            />
+          </div>
+          <div className="setting-group">
+            <label>Instagram Profile URL</label>
+            <input 
+              type="url" 
+              value={settings.instagram_url} 
+              onChange={e => setSettings({ ...settings, instagram_url: e.target.value })}
+              placeholder="https://instagram.com/..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Save Button */}
+      <div className="settings-actions">
+        <button className="save-settings-btn" onClick={saveSettings} disabled={saving}>
+          <Save size={18} /> {saving ? "Saving..." : "Save Settings"}
+        </button>
+      </div>
+    </div>
   );
 };
 
