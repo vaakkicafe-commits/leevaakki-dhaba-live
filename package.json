@@ -1,12 +1,11 @@
 {
-  "name": "flutter-web-app",
+  "name": "lee-vaakki-dhaba",
   "version": "1.0.0",
-  "description": "Flutter web application for Vercel",
+  "description": "Lee Vaakki Dhaba - Flutter web application",
   "scripts": {
-    "build": "/Users/vaakki/Documents/flutter_sdk/bin/flutter build web --release --web-renderer canvaskit",
-    "start": "/Users/vaakki/Documents/flutter_sdk/bin/flutter run -d chrome --web-port 3000"
+    "build": "echo 'Pre-built Flutter app - upload build/web folder'"
   },
-  "keywords": ["flutter", "web", "vercel"],
-  "author": "",
+  "keywords": ["flutter", "web", "vercel", "restaurant"],
+  "author": "Lee Vaakki Dhaba",
   "license": "MIT"
 }
