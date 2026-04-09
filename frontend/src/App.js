@@ -373,15 +373,25 @@ const MenuItemCard = ({ item }) => {
   const cartItem = items.find(i => i.menu_item.id === item.id);
   const quantity = cartItem?.quantity || 0;
 
+  // Vibration feedback
+  const vibrate = (pattern = 50) => {
+    if (navigator.vibrate) {
+      navigator.vibrate(pattern);
+    }
+  };
+
   const handleAdd = () => {
+    vibrate(50);
     addItem(item, 1);
   };
 
   const handleIncrease = () => {
+    vibrate(30);
     updateQuantity(item.id, quantity + 1);
   };
 
   const handleDecrease = () => {
+    vibrate(quantity === 1 ? [30, 50, 30] : 30); // Double vibrate when removing
     updateQuantity(item.id, quantity - 1);
   };
 
@@ -543,12 +553,12 @@ const CartPage = () => {
                 <p className="item-price">₹{menu_item.price} each</p>
               </div>
               <div className="quantity-controls">
-                <button onClick={() => updateQuantity(menu_item.id, quantity - 1)}><Minus size={16} /></button>
+                <button onClick={() => { navigator.vibrate?.(quantity === 1 ? [30, 50, 30] : 30); updateQuantity(menu_item.id, quantity - 1); }}><Minus size={16} /></button>
                 <span>{quantity}</span>
-                <button onClick={() => updateQuantity(menu_item.id, quantity + 1)}><Plus size={16} /></button>
+                <button onClick={() => { navigator.vibrate?.(30); updateQuantity(menu_item.id, quantity + 1); }}><Plus size={16} /></button>
               </div>
               <span className="item-total">₹{menu_item.price * quantity}</span>
-              <button className="remove-btn" onClick={() => removeItem(menu_item.id)}><X size={18} /></button>
+              <button className="remove-btn" onClick={() => { navigator.vibrate?.([50, 30, 50]); removeItem(menu_item.id); }}><X size={18} /></button>
             </div>
           ))}
         </div>
