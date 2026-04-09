@@ -362,7 +362,7 @@ body {
 .category-card {
   background: white;
   border-radius: var(--radius-md);
-  padding: 24px 16px;
+  padding: 20px 16px;
   text-align: center;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -373,6 +373,21 @@ body {
   transform: translateY(-4px);
   box-shadow: var(--shadow-md);
   border-color: var(--cat-color);
+}
+
+.cat-icon-wrapper {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  transition: transform 0.2s;
+}
+
+.category-card:hover .cat-icon-wrapper {
+  transform: scale(1.1);
 }
 
 .cat-icon {

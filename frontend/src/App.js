@@ -2,7 +2,7 @@ import React, { useState, useEffect, createContext, useContext } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Link } from "react-router-dom";
 import axios from "axios";
-import { ShoppingCart, User, MapPin, Clock, Phone, ChevronRight, Plus, Minus, Trash2, X, Check, Search, Star, Flame, Leaf, Menu as MenuIcon, Home, Package, LogOut, Settings } from "lucide-react";
+import { ShoppingCart, User, MapPin, Clock, Phone, ChevronRight, Plus, Minus, Trash2, X, Check, Search, Star, Flame, Leaf, Menu as MenuIcon, Home, Package, LogOut, Settings, Utensils, ChefHat, Croissant, Gift, Coffee, IceCream2 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -202,12 +202,12 @@ const HomePage = () => {
   }, []);
 
   const categories = [
-    { name: "Starters", icon: "🍢", color: "#FF6B35" },
-    { name: "Mains", icon: "🍛", color: "#2E7D32" },
-    { name: "Breads", icon: "🫓", color: "#D4A574" },
-    { name: "Combos", icon: "🍱", color: "#E53935" },
-    { name: "Beverages", icon: "🥤", color: "#8D6E63" },
-    { name: "Desserts", icon: "🍮", color: "#EC407A" },
+    { name: "Starters", icon: Flame, color: "#FF6B35" },
+    { name: "Mains", icon: ChefHat, color: "#2E7D32" },
+    { name: "Breads", icon: Croissant, color: "#D4A574" },
+    { name: "Combos", icon: Gift, color: "#E53935" },
+    { name: "Beverages", icon: Coffee, color: "#8D6E63" },
+    { name: "Desserts", icon: IceCream2, color: "#EC407A" },
   ];
 
   return (
@@ -246,12 +246,17 @@ const HomePage = () => {
       <section className="categories-section">
         <h2>What's on your mind?</h2>
         <div className="categories-grid">
-          {categories.map(cat => (
-            <div key={cat.name} className="category-card" onClick={() => navigate(`/menu?category=${cat.name}`)} style={{ "--cat-color": cat.color }}>
-              <span className="cat-icon">{cat.icon}</span>
-              <span className="cat-name">{cat.name}</span>
-            </div>
-          ))}
+          {categories.map(cat => {
+            const IconComponent = cat.icon;
+            return (
+              <div key={cat.name} className="category-card" onClick={() => navigate(`/menu?category=${cat.name}`)} style={{ "--cat-color": cat.color }}>
+                <div className="cat-icon-wrapper" style={{ background: `${cat.color}15`, border: `2px solid ${cat.color}30` }}>
+                  <IconComponent size={32} color={cat.color} strokeWidth={1.5} />
+                </div>
+                <span className="cat-name">{cat.name}</span>
+              </div>
+            );
+          })}
         </div>
       </section>
 
