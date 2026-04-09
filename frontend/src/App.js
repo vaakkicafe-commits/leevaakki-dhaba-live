@@ -369,13 +369,20 @@ const HomePage = () => {
 };
 
 const MenuItemCard = ({ item }) => {
-  const { addItem } = useCart();
-  const [added, setAdded] = useState(false);
+  const { addItem, items, updateQuantity } = useCart();
+  const cartItem = items.find(i => i.menu_item.id === item.id);
+  const quantity = cartItem?.quantity || 0;
 
   const handleAdd = () => {
     addItem(item, 1);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
+  };
+
+  const handleIncrease = () => {
+    updateQuantity(item.id, quantity + 1);
+  };
+
+  const handleDecrease = () => {
+    updateQuantity(item.id, quantity - 1);
   };
 
   return (
@@ -392,9 +399,21 @@ const MenuItemCard = ({ item }) => {
         <p className="item-desc">{item.description}</p>
         <div className="item-footer">
           <span className="item-price">₹{item.price}</span>
-          <button className={`add-btn ${added ? "added" : ""}`} onClick={handleAdd} data-testid={`add-${item.id}`}>
-            {added ? <><Check size={16} /> Added</> : <><Plus size={16} /> Add</>}
-          </button>
+          {quantity === 0 ? (
+            <button className="add-btn" onClick={handleAdd} data-testid={`add-${item.id}`}>
+              <Plus size={16} /> Add
+            </button>
+          ) : (
+            <div className="qty-controls" data-testid={`qty-${item.id}`}>
+              <button className="qty-btn minus" onClick={handleDecrease}>
+                <Minus size={16} />
+              </button>
+              <span className="qty-value">{quantity}</span>
+              <button className="qty-btn plus" onClick={handleIncrease}>
+                <Plus size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

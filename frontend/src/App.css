@@ -569,6 +569,48 @@ body {
   background: var(--success);
 }
 
+/* Quantity Controls on Menu Card */
+.qty-controls {
+  display: flex;
+  align-items: center;
+  background: var(--primary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.qty-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.qty-btn:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+.qty-btn.minus {
+  background: var(--primary-dark);
+}
+
+.qty-btn.plus {
+  background: var(--secondary);
+}
+
+.qty-value {
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 28px;
+  text-align: center;
+}
+
 /* Features Section */
 .features-section {
   padding: 64px 24px;
