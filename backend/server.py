@@ -422,6 +422,11 @@ async def update_order_status(order_id: str, update: OrderStatusUpdate, admin = 
         raise HTTPException(status_code=404, detail="Order not found")
     return {"message": "Status updated"}
 
+@api_router.get("/admin/coupons")
+async def get_all_coupons(admin = Depends(get_admin_user)):
+    coupons = await db.coupons.find({}, {"_id": 0}).to_list(100)
+    return {"coupons": coupons}
+
 @api_router.post("/admin/coupons")
 async def create_coupon(coupon: CouponCreate, admin = Depends(get_admin_user)):
     coupon_doc = {
