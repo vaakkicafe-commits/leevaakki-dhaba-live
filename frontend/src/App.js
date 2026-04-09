@@ -258,6 +258,7 @@ const Footer = () => {
 // Pages
 const HomePage = () => {
   const [bestsellers, setBestsellers] = useState([]);
+  const [quickViewItem, setQuickViewItem] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -333,10 +334,11 @@ const HomePage = () => {
         </div>
         <div className="items-grid">
           {bestsellers.map(item => (
-            <MenuItemCard key={item.id} item={item} />
+            <MenuItemCard key={item.id} item={item} onImageClick={setQuickViewItem} />
           ))}
         </div>
       </section>
+      {quickViewItem && <QuickViewModal item={quickViewItem} onClose={() => setQuickViewItem(null)} />}
 
       {/* App Download / Features */}
       <section className="features-section">
@@ -368,7 +370,7 @@ const HomePage = () => {
   );
 };
 
-const MenuItemCard = ({ item }) => {
+const MenuItemCard = ({ item, onImageClick }) => {
   const { addItem, items, updateQuantity } = useCart();
   const cartItem = items.find(i => i.menu_item.id === item.id);
   const quantity = cartItem?.quantity || 0;
@@ -391,18 +393,19 @@ const MenuItemCard = ({ item }) => {
   };
 
   const handleDecrease = () => {
-    vibrate(quantity === 1 ? [30, 50, 30] : 30); // Double vibrate when removing
+    vibrate(quantity === 1 ? [30, 50, 30] : 30);
     updateQuantity(item.id, quantity - 1);
   };
 
   return (
     <div className="menu-item-card" data-testid={`menu-item-${item.id}`}>
-      <div className="item-image">
+      <div className="item-image" onClick={() => onImageClick?.(item)}>
         <img src={item.image_url} alt={item.name} loading="lazy" />
         {item.is_bestseller && <span className="bestseller-tag"><Flame size={12} /> Bestseller</span>}
         <span className={`veg-tag ${item.is_veg ? "veg" : "non-veg"}`}>
           {item.is_veg ? <Leaf size={12} /> : "●"}
         </span>
+        <div className="image-tap-hint">Tap for details</div>
       </div>
       <div className="item-details">
         <h4>{item.name}</h4>
@@ -430,12 +433,80 @@ const MenuItemCard = ({ item }) => {
   );
 };
 
+// Swiggy-style Quick View Bottom Sheet
+const QuickViewModal = ({ item, onClose }) => {
+  const { addItem, items, updateQuantity } = useCart();
+  const cartItem = items.find(i => i.menu_item.id === item.id);
+  const quantity = cartItem?.quantity || 0;
+
+  const vibrate = (pattern = 50) => {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  };
+
+  const handleAdd = () => {
+    vibrate(50);
+    addItem(item, 1);
+  };
+
+  const handleIncrease = () => {
+    vibrate(30);
+    updateQuantity(item.id, quantity + 1);
+  };
+
+  const handleDecrease = () => {
+    vibrate(quantity === 1 ? [30, 50, 30] : 30);
+    updateQuantity(item.id, quantity - 1);
+  };
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  return (
+    <div className="qv-overlay" onClick={onClose} data-testid="quick-view-overlay">
+      <div className="qv-sheet" onClick={e => e.stopPropagation()} data-testid="quick-view-modal">
+        <div className="qv-handle" />
+        <button className="qv-close" onClick={onClose} data-testid="quick-view-close"><X size={20} /></button>
+        <div className="qv-img-wrap">
+          <img src={item.image_url} alt={item.name} />
+          <div className="qv-badges">
+            <span className={`qv-veg-badge ${item.is_veg ? "veg" : "non-veg"}`}>
+              {item.is_veg ? <><Leaf size={12} /> Veg</> : <><span className="nv-dot">●</span> Non-Veg</>}
+            </span>
+            {item.is_bestseller && <span className="qv-best-badge"><Flame size={12} /> Bestseller</span>}
+          </div>
+        </div>
+        <div className="qv-body">
+          <h3 className="qv-name">{item.name}</h3>
+          <p className="qv-desc">{item.description}</p>
+          <div className="qv-footer">
+            <span className="qv-price">₹{item.price}</span>
+            {quantity === 0 ? (
+              <button className="qv-add-btn" onClick={handleAdd} data-testid="quick-view-add-btn">
+                ADD
+              </button>
+            ) : (
+              <div className="qv-qty" data-testid="quick-view-qty">
+                <button onClick={handleDecrease}><Minus size={16} /></button>
+                <span>{quantity}</span>
+                <button onClick={handleIncrease}><Plus size={16} /></button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MenuPage = () => {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [vegOnly, setVegOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [quickViewItem, setQuickViewItem] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -485,11 +556,12 @@ const MenuPage = () => {
 
       <div className="menu-grid">
         {filteredItems.length > 0 ? (
-          filteredItems.map(item => <MenuItemCard key={item.id} item={item} />)
+          filteredItems.map(item => <MenuItemCard key={item.id} item={item} onImageClick={setQuickViewItem} />)
         ) : (
           <div className="no-items">No items found</div>
         )}
       </div>
+      {quickViewItem && <QuickViewModal item={quickViewItem} onClose={() => setQuickViewItem(null)} />}
     </div>
   );
 };

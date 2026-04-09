@@ -1791,6 +1791,262 @@ body {
   color: white;
 }
 
+/* Image Tap Hint on Menu Card */
+.image-tap-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.6));
+  color: white;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 20px 8px 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.item-image:hover .image-tap-hint {
+  opacity: 1;
+}
+
+.item-image {
+  cursor: pointer;
+}
+
+/* ===== Swiggy-style Quick View Bottom Sheet ===== */
+.qv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: qvFadeIn 0.2s ease;
+}
+
+@keyframes qvFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.qv-sheet {
+  background: var(--white);
+  width: 100%;
+  max-width: 420px;
+  border-radius: 20px 20px 0 0;
+  position: relative;
+  animation: qvSlideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes qvSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.qv-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--gray-300);
+  border-radius: 2px;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+.qv-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.45);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.qv-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.qv-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.qv-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.qv-badges {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.qv-veg-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+}
+
+.qv-veg-badge.veg {
+  background: rgba(46, 125, 50, 0.9);
+  color: white;
+}
+
+.qv-veg-badge.non-veg {
+  background: rgba(198, 40, 40, 0.9);
+  color: white;
+}
+
+.nv-dot {
+  font-size: 8px;
+}
+
+.qv-best-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 107, 53, 0.9);
+  color: white;
+}
+
+.qv-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.qv-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.qv-desc {
+  font-size: 13px;
+  color: var(--gray-500);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.qv-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-100);
+}
+
+.qv-price {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+
+.qv-add-btn {
+  background: var(--white);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  padding: 10px 36px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qv-add-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.qv-add-btn:active {
+  transform: scale(0.96);
+}
+
+.qv-qty {
+  display: flex;
+  align-items: center;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qv-qty button {
+  background: var(--primary);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.qv-qty button:hover {
+  background: var(--primary-dark);
+}
+
+.qv-qty span {
+  width: 36px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--primary);
+}
+
+/* Desktop: center the sheet as a card */
+@media (min-width: 769px) {
+  .qv-overlay {
+    align-items: center;
+  }
+
+  .qv-sheet {
+    border-radius: 16px;
+    max-height: 80vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .qv-handle {
+    display: none;
+  }
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .categories-grid {
