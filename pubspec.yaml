@@ -1,5 +1,5 @@
 name: lee_vaakki_dhaba
-description: Restaurant Mobile App
+description: Lee Vaakki Dhaba - Authentic North Indian Restaurant App
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:
