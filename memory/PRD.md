@@ -103,8 +103,10 @@ A full-stack food ordering platform with React frontend and FastAPI backend, fea
 
 ### P1 - Important
 - [x] Admin dashboard UI (Overview, Orders, Menu, Coupons)
-- [ ] Online payment integration (Razorpay/UPI)
-- [ ] WhatsApp order notifications
+- [x] Real-time order notifications (WebSocket + polling fallback)
+- [x] WhatsApp order confirmations to customers
+- [x] UPI payment option (intent-based)
+- [ ] Razorpay payment gateway (requires merchant API keys)
 - [ ] Push notifications
 
 ### P2 - Nice to Have

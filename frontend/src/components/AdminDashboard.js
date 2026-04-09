@@ -30,53 +30,97 @@ const AdminDashboard = ({ user, token }) => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const wsRef = useRef(null);
 
-  // WebSocket connection for real-time updates
+  // WebSocket connection for real-time updates with polling fallback
   const connectWebSocket = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
-    
-    const ws = new WebSocket(`${WS_URL}/ws/admin`);
-    
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-      // Send ping every 30 seconds to keep alive
-      const pingInterval = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send('ping');
+    // Try WebSocket first
+    try {
+      if (wsRef.current?.readyState === WebSocket.OPEN) return;
+      
+      const ws = new WebSocket(`${WS_URL}/ws/admin`);
+      
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        // Send ping every 30 seconds to keep alive
+        const pingInterval = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send('ping');
+          }
+        }, 30000);
+        ws.pingInterval = pingInterval;
+      };
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'new_order') {
+          // Play notification sound
+          if (soundEnabled) {
+            playNotificationSound();
+          }
+          // Add to notifications
+          setNotifications(prev => [{
+            id: Date.now(),
+            ...data.order,
+            timestamp: new Date().toISOString()
+          }, ...prev.slice(0, 9)]);
+          // Refresh data
+          fetchData();
         }
-      }, 30000);
-      ws.pingInterval = pingInterval;
-    };
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'new_order') {
-        // Play notification sound
-        if (soundEnabled) {
-          playNotificationSound();
-        }
-        // Add to notifications
-        setNotifications(prev => [{
-          id: Date.now(),
-          ...data.order,
-          timestamp: new Date().toISOString()
-        }, ...prev.slice(0, 9)]);
-        // Refresh data
-        fetchData();
-      }
-    };
-    
-    ws.onclose = () => {
-      console.log('WebSocket disconnected, reconnecting...');
-      if (ws.pingInterval) clearInterval(ws.pingInterval);
-      setTimeout(connectWebSocket, 3000);
-    };
-    
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-    
-    wsRef.current = ws;
+      };
+      
+      ws.onclose = () => {
+        console.log('WebSocket disconnected, using polling fallback');
+        if (ws.pingInterval) clearInterval(ws.pingInterval);
+        // Fall back to polling
+        startPolling();
+      };
+      
+      ws.onerror = (error) => {
+        console.log('WebSocket error, using polling fallback');
+        startPolling();
+      };
+      
+      wsRef.current = ws;
+    } catch (err) {
+      console.log('WebSocket not supported, using polling');
+      startPolling();
+    }
   }, [soundEnabled]);
+
+  // Polling fallback for environments without WebSocket
+  const pollingRef = useRef(null);
+  const lastOrderCountRef = useRef(0);
+  
+  const startPolling = useCallback(() => {
+    if (pollingRef.current) return; // Already polling
+    
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await axios.get(`${API}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } });
+        const newOrderCount = res.data.total_orders;
+        
+        if (lastOrderCountRef.current > 0 && newOrderCount > lastOrderCountRef.current) {
+          // New order detected
+          if (soundEnabled) {
+            playNotificationSound();
+          }
+          fetchData();
+          // Show notification
+          setNotifications(prev => [{
+            id: Date.now(),
+            order_number: `New Order`,
+            user_name: "Customer",
+            total: 0,
+            items_count: 0,
+            order_type: "order",
+            timestamp: new Date().toISOString()
+          }, ...prev.slice(0, 9)]);
+        }
+        lastOrderCountRef.current = newOrderCount;
+      } catch (err) {
+        console.log('Polling error:', err);
+      }
+    }, 10000); // Poll every 10 seconds
+  }, [token, soundEnabled]);
 
   useEffect(() => {
     // Wait for auth to be checked
@@ -93,10 +137,18 @@ const AdminDashboard = ({ user, token }) => {
     fetchData();
     connectWebSocket();
     
+    // Initialize last order count
+    axios.get(`${API}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => { lastOrderCountRef.current = res.data.total_orders; })
+      .catch(() => {});
+    
     return () => {
       if (wsRef.current) {
         if (wsRef.current.pingInterval) clearInterval(wsRef.current.pingInterval);
         wsRef.current.close();
+      }
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
       }
     };
   }, [user, token, navigate, connectWebSocket]);
