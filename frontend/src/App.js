@@ -599,9 +599,24 @@ const CheckoutPage = () => {
         order_type: orderType,
         address_id: orderType === "delivery" ? selectedAddress : null,
         payment_method: paymentMethod,
-        coupon_code: couponCode || null
+        coupon_code: couponCode || null,
+        customer_phone: user?.phone
       };
       const res = await axios.post(`${API}/orders`, orderData, { headers: { Authorization: `Bearer ${token}` } });
+      
+      // If UPI payment selected, get UPI URL and open
+      if (paymentMethod === "upi") {
+        try {
+          const upiRes = await axios.post(`${API}/payments/upi/create?order_id=${res.data.id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+          // Try to open UPI intent
+          const upiLink = document.createElement('a');
+          upiLink.href = upiRes.data.upi_url;
+          upiLink.click();
+        } catch (upiErr) {
+          console.log("UPI redirect failed, proceeding to success page");
+        }
+      }
+      
       clearCart();
       navigate(`/order-success/${res.data.order_number}`);
     } catch (err) {
@@ -679,9 +694,14 @@ const CheckoutPage = () => {
               </label>
               <label className={paymentMethod === "upi" ? "selected" : ""}>
                 <input type="radio" name="payment" value="upi" checked={paymentMethod === "upi"} onChange={e => setPaymentMethod(e.target.value)} />
-                📱 UPI (Pay at counter)
+                📱 Pay via UPI
               </label>
             </div>
+            {paymentMethod === "upi" && (
+              <div className="upi-info">
+                <p>💡 After placing order, you'll be redirected to your UPI app to complete payment</p>
+              </div>
+            )}
           </section>
         </div>
 
@@ -714,6 +734,57 @@ const CheckoutPage = () => {
 const OrderSuccessPage = () => {
   const { order_number } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [orderDetails, setOrderDetails] = useState(null);
+
+  useEffect(() => {
+    // Fetch order details for WhatsApp message
+    const fetchOrder = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const res = await axios.get(`${API}/orders`, { headers: { Authorization: `Bearer ${token}` } });
+          const order = res.data.orders.find(o => o.order_number === order_number);
+          if (order) setOrderDetails(order);
+        }
+      } catch (err) {
+        console.error("Failed to fetch order details");
+      }
+    };
+    fetchOrder();
+  }, [order_number]);
+
+  const sendWhatsAppConfirmation = () => {
+    if (!orderDetails || !user?.phone) return;
+    
+    let message = `🍛 *Lee Vaakki Dhaba*\n\n`;
+    message += `✅ *Order Confirmed!*\n\n`;
+    message += `📋 *Order #${orderDetails.order_number}*\n`;
+    message += `━━━━━━━━━━━━━━━\n\n`;
+    
+    message += `*Items:*\n`;
+    orderDetails.items?.forEach(item => {
+      message += `• ${item.menu_item?.name} × ${item.quantity} - ₹${item.item_total?.toFixed(0)}\n`;
+    });
+    
+    message += `\n━━━━━━━━━━━━━━━\n`;
+    message += `*Total: ₹${orderDetails.total?.toFixed(0)}*\n\n`;
+    
+    message += `📍 *${orderDetails.order_type === 'delivery' ? 'Delivery' : orderDetails.order_type}*\n`;
+    if (orderDetails.delivery_address) {
+      message += `${orderDetails.delivery_address.address_line}, ${orderDetails.delivery_address.city}\n\n`;
+    }
+    
+    message += `⏱️ Estimated time: ${orderDetails.estimated_time} mins\n\n`;
+    message += `Track your order:\n`;
+    message += `${window.location.origin}/track?order=${orderDetails.order_number}\n\n`;
+    message += `Thank you for ordering! 🙏`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const phone = user.phone.replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   return (
     <div className="success-page" data-testid="order-success-page">
@@ -727,6 +798,11 @@ const OrderSuccessPage = () => {
           <button className="btn-primary" onClick={() => navigate(`/track?order=${order_number}`)}>Track Order</button>
           <button className="btn-secondary" onClick={() => navigate("/menu")}>Order More</button>
         </div>
+        {orderDetails && (
+          <button className="whatsapp-btn" onClick={sendWhatsAppConfirmation}>
+            📱 Get WhatsApp Confirmation
+          </button>
+        )}
       </div>
     </div>
   );

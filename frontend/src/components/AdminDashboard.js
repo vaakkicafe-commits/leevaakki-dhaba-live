@@ -1,15 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { 
   LayoutDashboard, Package, UtensilsCrossed, Ticket, Users, TrendingUp, 
   Clock, CheckCircle, Truck, ChefHat, XCircle, Eye, Edit, Trash2, Plus,
   IndianRupee, ShoppingBag, ArrowUp, ArrowDown, RefreshCw, Search,
-  Filter, MoreVertical, X, Save, Leaf, Image
+  Filter, MoreVertical, X, Save, Leaf, Image, Bell, Volume2, VolumeX
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+const WS_URL = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+
+// Notification sound
+const playNotificationSound = () => {
+  const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleRYAQKnY5pF3BRxFsu/ujWQDAEnN/fWDSwAAS///+3Y6AABO//z7cioAAFT/+vVuGgAAWv/27WoSAABf/+/oZQsAAGT/5+RfBQAAaf/d3loAAABu/9TYVAIAAHP/y9JPBQAAZ//F0EoIAABb/8HOSREAAFD/wMdEGgAAR/+9xT8jAAA//7rDOiwAADj/t8E1NQAAMv+0vzA+AAAr/7G9K0cAACb/r7smUQAAIf+tuhxbAAAd/6y5F2UAAB3/q7gRbwAAHv+quAt5AAAf/6m3BoMAACD/qLYAjQAAIf+otZeXAAAi/6e0');
+  audio.play().catch(() => {});
+};
 
 const AdminDashboard = ({ user, token }) => {
   const navigate = useNavigate();
@@ -19,6 +26,57 @@ const AdminDashboard = ({ user, token }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const wsRef = useRef(null);
+
+  // WebSocket connection for real-time updates
+  const connectWebSocket = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    
+    const ws = new WebSocket(`${WS_URL}/ws/admin`);
+    
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      // Send ping every 30 seconds to keep alive
+      const pingInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send('ping');
+        }
+      }, 30000);
+      ws.pingInterval = pingInterval;
+    };
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'new_order') {
+        // Play notification sound
+        if (soundEnabled) {
+          playNotificationSound();
+        }
+        // Add to notifications
+        setNotifications(prev => [{
+          id: Date.now(),
+          ...data.order,
+          timestamp: new Date().toISOString()
+        }, ...prev.slice(0, 9)]);
+        // Refresh data
+        fetchData();
+      }
+    };
+    
+    ws.onclose = () => {
+      console.log('WebSocket disconnected, reconnecting...');
+      if (ws.pingInterval) clearInterval(ws.pingInterval);
+      setTimeout(connectWebSocket, 3000);
+    };
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+    wsRef.current = ws;
+  }, [soundEnabled]);
 
   useEffect(() => {
     // Wait for auth to be checked
@@ -33,7 +91,15 @@ const AdminDashboard = ({ user, token }) => {
       return;
     }
     fetchData();
-  }, [user, token, navigate]);
+    connectWebSocket();
+    
+    return () => {
+      if (wsRef.current) {
+        if (wsRef.current.pingInterval) clearInterval(wsRef.current.pingInterval);
+        wsRef.current.close();
+      }
+    };
+  }, [user, token, navigate, connectWebSocket]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -74,6 +140,22 @@ const AdminDashboard = ({ user, token }) => {
 
   return (
     <div className="admin-dashboard" data-testid="admin-dashboard">
+      {/* Notification Toast */}
+      {notifications.length > 0 && (
+        <div className="notification-toast">
+          <div className="toast-header">
+            <Bell size={18} />
+            <span>New Order!</span>
+            <button onClick={() => setNotifications([])}><X size={16} /></button>
+          </div>
+          <div className="toast-body">
+            <strong>#{notifications[0].order_number}</strong>
+            <p>{notifications[0].user_name} - ₹{notifications[0].total?.toFixed(0)}</p>
+            <p>{notifications[0].items_count} items • {notifications[0].order_type}</p>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-logo">
@@ -92,6 +174,9 @@ const AdminDashboard = ({ user, token }) => {
               >
                 <Icon size={20} />
                 <span>{tab.label}</span>
+                {tab.id === "orders" && stats?.pending_orders > 0 && (
+                  <span className="nav-badge">{stats.pending_orders}</span>
+                )}
               </button>
             );
           })}
@@ -109,9 +194,18 @@ const AdminDashboard = ({ user, token }) => {
       <main className="admin-main">
         <header className="admin-header">
           <h1>{tabs.find(t => t.id === activeTab)?.label}</h1>
-          <button className="refresh-btn" onClick={fetchData}>
-            <RefreshCw size={18} /> Refresh
-          </button>
+          <div className="header-actions">
+            <button 
+              className={`sound-toggle ${soundEnabled ? 'on' : 'off'}`}
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              title={soundEnabled ? 'Mute notifications' : 'Enable notifications'}
+            >
+              {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </button>
+            <button className="refresh-btn" onClick={fetchData}>
+              <RefreshCw size={18} /> Refresh
+            </button>
+          </div>
         </header>
 
         <div className="admin-content">

@@ -308,6 +308,57 @@ class LeeVaakkiAPITester:
                      f"Status: {status}" if not success else "", data)
         return success
 
+    def test_upi_payment_creation(self):
+        """Test UPI payment intent creation"""
+        # First create an order
+        order_success, order_number = self.test_create_order()
+        if not order_success:
+            self.log_test("UPI payment creation", False, "No order to create payment for", {})
+            return False
+
+        # Get the order ID from user orders
+        status, orders_data = self.make_request('GET', 'orders')
+        if status != 200 or not orders_data.get('orders'):
+            self.log_test("UPI payment creation", False, "Cannot get order ID", {})
+            return False
+
+        order_id = orders_data['orders'][0]['id']
+        
+        # Test UPI payment creation
+        status, data = self.make_request('POST', f'payments/upi/create?order_id={order_id}')
+        success = status == 200 and 'upi_url' in data and 'upi_id' in data
+        
+        self.log_test("UPI payment creation", success, 
+                     f"Status: {status}" if not success else "", data)
+        return success
+
+    def test_payment_confirmation(self):
+        """Test payment confirmation"""
+        # First create an order
+        order_success, order_number = self.test_create_order()
+        if not order_success:
+            self.log_test("Payment confirmation", False, "No order to confirm payment for", {})
+            return False
+
+        # Get the order ID from user orders
+        status, orders_data = self.make_request('GET', 'orders')
+        if status != 200 or not orders_data.get('orders'):
+            self.log_test("Payment confirmation", False, "Cannot get order ID", {})
+            return False
+
+        order_id = orders_data['orders'][0]['id']
+        
+        # Test payment confirmation
+        confirm_data = {
+            "transaction_id": "TEST_TXN_123456"
+        }
+        status, data = self.make_request('POST', f'payments/confirm?order_id={order_id}&transaction_id=TEST_TXN_123456')
+        success = status == 200 and 'message' in data
+        
+        self.log_test("Payment confirmation", success, 
+                     f"Status: {status}" if not success else "", data)
+        return success
+
     def run_all_tests(self):
         """Run all API tests"""
         print("🚀 Starting Lee Vaakki Dhaba API Tests")
@@ -343,6 +394,10 @@ class LeeVaakkiAPITester:
         if self.admin_token:
             self.test_admin_stats()
             self.test_admin_orders()
+        
+        # Payment tests
+        self.test_upi_payment_creation()
+        self.test_payment_confirmation()
         
         # Print summary
         print("\n" + "=" * 50)

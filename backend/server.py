@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -12,6 +12,8 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
+import json
+import asyncio
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -25,6 +27,28 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'lee-vaakki-dhaba-secret-key-2024')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
+
+# WebSocket connections for real-time notifications
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except:
+                pass
+
+manager = ConnectionManager()
 
 app = FastAPI(title="Lee Vaakki Dhaba API", version="1.0.0")
 api_router = APIRouter(prefix="/api")
@@ -90,6 +114,7 @@ class OrderCreate(BaseModel):
     payment_method: str = "cod"  # cod, online, upi
     coupon_code: Optional[str] = None
     special_instructions: Optional[str] = None
+    customer_phone: Optional[str] = None  # For WhatsApp notifications
 
 class OrderStatusUpdate(BaseModel):
     status: str
@@ -322,6 +347,20 @@ async def create_order(order: OrderCreate, user = Depends(get_current_user)):
     
     await db.orders.insert_one(order_doc)
     del order_doc["_id"]
+    
+    # Broadcast new order notification to admin
+    await manager.broadcast({
+        "type": "new_order",
+        "order": {
+            "order_number": order_doc["order_number"],
+            "user_name": order_doc["user_name"],
+            "total": order_doc["total"],
+            "items_count": len(order_doc["items"]),
+            "order_type": order_doc["order_type"],
+            "created_at": order_doc["created_at"]
+        }
+    })
+    
     return order_doc
 
 @api_router.get("/orders")
@@ -533,6 +572,58 @@ async def seed_database():
 @api_router.get("/")
 async def root():
     return {"message": "Lee Vaakki Dhaba API", "version": "1.0.0"}
+
+# WebSocket endpoint for real-time notifications
+@app.websocket("/ws/admin")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive
+            data = await websocket.receive_text()
+            # Echo back or handle commands
+            if data == "ping":
+                await websocket.send_json({"type": "pong"})
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+# UPI Payment endpoint
+@api_router.post("/payments/upi/create")
+async def create_upi_payment(order_id: str, user = Depends(get_current_user)):
+    order = await db.orders.find_one({"id": order_id, "user_id": user["id"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Restaurant UPI ID - replace with actual
+    upi_id = os.environ.get('RESTAURANT_UPI_ID', 'leevaakkidhaba@upi')
+    amount = order["total"]
+    order_number = order["order_number"]
+    
+    # Generate UPI Intent URL
+    upi_url = f"upi://pay?pa={upi_id}&pn=Lee%20Vaakki%20Dhaba&am={amount}&cu=INR&tn=Order%20{order_number}"
+    
+    return {
+        "upi_url": upi_url,
+        "upi_id": upi_id,
+        "amount": amount,
+        "order_number": order_number
+    }
+
+@api_router.post("/payments/confirm")
+async def confirm_payment(order_id: str, transaction_id: str, user = Depends(get_current_user)):
+    result = await db.orders.update_one(
+        {"id": order_id, "user_id": user["id"]},
+        {
+            "$set": {
+                "payment_status": "paid",
+                "payment_transaction_id": transaction_id,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"message": "Payment confirmed"}
 
 app.include_router(api_router)
 

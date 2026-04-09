@@ -1,5 +1,113 @@
 /* Admin Dashboard Styles */
 
+/* Notification Toast */
+.notification-toast {
+  position: fixed;
+  top: 90px;
+  right: 24px;
+  width: 320px;
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  z-index: 1001;
+  animation: slideIn 0.3s ease;
+  border-left: 4px solid var(--secondary);
+  overflow: hidden;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--secondary);
+  color: white;
+}
+
+.toast-header span {
+  flex: 1;
+  font-weight: 600;
+}
+
+.toast-header button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.toast-body {
+  padding: 16px;
+}
+
+.toast-body strong {
+  font-size: 18px;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.toast-body p {
+  font-size: 14px;
+  color: var(--gray-600);
+  margin: 2px 0;
+}
+
+/* Sound Toggle */
+.sound-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sound-toggle.on {
+  color: var(--primary);
+}
+
+.sound-toggle.off {
+  color: var(--gray-400);
+}
+
+.sound-toggle:hover {
+  background: var(--gray-100);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Nav Badge */
+.nav-badge {
+  background: var(--secondary);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  margin-left: auto;
+}
+
 .admin-loading {
   display: flex;
   flex-direction: column;
