@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lee Vaakki Dhaba</string>
+    <string name="title_activity_main">Lee Vaakki Dhaba</string>
+    <string name="package_name">com.leevaakkidhaba.app</string>
+    <string name="custom_url_scheme">com.leevaakkidhaba.app</string>
+</resources>
