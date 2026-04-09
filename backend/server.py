@@ -24,7 +24,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # JWT Configuration
-JWT_SECRET = os.environ.get('JWT_SECRET', 'lee-vaakki-dhaba-secret-key-2024')
+JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
@@ -269,12 +269,18 @@ async def delete_address(address_id: str, user = Depends(get_current_user)):
 
 @api_router.post("/orders")
 async def create_order(order: OrderCreate, user = Depends(get_current_user)):
-    # Calculate order total
+    # Calculate order total - batch query for menu items
     items_details = []
     subtotal = 0
     
+    # Batch fetch all menu items in one query (fixes N+1 issue)
+    menu_item_ids = [item.menu_item_id for item in order.items]
+    menu_items_cursor = db.menu_items.find({"id": {"$in": menu_item_ids}}, {"_id": 0})
+    menu_items_list = await menu_items_cursor.to_list(None)
+    menu_items_dict = {item["id"]: item for item in menu_items_list}
+    
     for cart_item in order.items:
-        menu_item = await db.menu_items.find_one({"id": cart_item.menu_item_id}, {"_id": 0})
+        menu_item = menu_items_dict.get(cart_item.menu_item_id)
         if not menu_item:
             raise HTTPException(status_code=400, detail=f"Menu item {cart_item.menu_item_id} not found")
         
