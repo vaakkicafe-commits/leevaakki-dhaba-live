@@ -506,21 +506,18 @@ async def get_stats(admin = Depends(get_admin_user)):
 
 # ============== SEED DATA ==============
 
-@api_router.post("/seed")
-async def seed_database():
-    # Check if already seeded
+async def _seed_database_if_empty():
+    """Core seed logic, callable from startup or API."""
     existing = await db.menu_items.count_documents({})
     if existing > 0:
-        return {"message": "Database already seeded"}
-    
-    # Seed menu items
+        return {"message": "Database already seeded", "seeded": False}
+
     menu_items = [
         # Starters
         {"id": "starter_1", "name": "Paneer Tikka", "description": "Marinated cottage cheese cubes grilled to perfection in tandoor", "price": 320, "category": "Starters", "image_url": "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": ["Bestseller", "Tandoor"], "customizations": []},
         {"id": "starter_2", "name": "Chicken Tikka", "description": "Tender chicken pieces marinated in spices and grilled", "price": 380, "category": "Starters", "image_url": "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?q=80&w=800", "is_veg": False, "is_bestseller": True, "is_available": True, "tags": ["Bestseller", "Tandoor"], "customizations": []},
         {"id": "starter_3", "name": "Aloo Tikki", "description": "Crispy potato patties served with chutneys", "price": 180, "category": "Starters", "image_url": "https://images.unsplash.com/photo-1606491956689-2ea866880c84?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": ["Street Food"], "customizations": []},
         {"id": "starter_4", "name": "Fish Amritsari", "description": "Crispy fried fish with Amritsari spices", "price": 420, "category": "Starters", "image_url": "https://images.unsplash.com/photo-1534080564583-6be75777b70a?q=80&w=800", "is_veg": False, "is_bestseller": False, "is_available": True, "tags": ["Fried", "Spicy"], "customizations": []},
-        
         # Mains
         {"id": "main_1", "name": "Butter Chicken", "description": "Tender chicken in a rich, creamy tomato gravy with butter", "price": 450, "category": "Mains", "image_url": "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?q=80&w=800", "is_veg": False, "is_bestseller": True, "is_available": True, "tags": ["Bestseller", "Creamy"], "customizations": []},
         {"id": "main_2", "name": "Dal Makhani", "description": "12-hour slow cooked black lentils with cream and butter", "price": 280, "category": "Mains", "image_url": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": ["Bestseller", "Slow Cooked"], "customizations": []},
@@ -528,52 +525,55 @@ async def seed_database():
         {"id": "main_4", "name": "Rogan Josh", "description": "Kashmiri style slow-cooked lamb in aromatic spices", "price": 520, "category": "Mains", "image_url": "https://images.unsplash.com/photo-1545247181-516773cae754?q=80&w=800", "is_veg": False, "is_bestseller": False, "is_available": True, "tags": ["Kashmiri", "Premium"], "customizations": []},
         {"id": "main_5", "name": "Palak Paneer", "description": "Cottage cheese cubes in creamy spinach gravy", "price": 290, "category": "Mains", "image_url": "https://images.unsplash.com/photo-1618449840665-9ed506d73a34?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": ["Healthy", "Creamy"], "customizations": []},
         {"id": "main_6", "name": "Chicken Biryani", "description": "Fragrant basmati rice layered with spiced chicken", "price": 380, "category": "Mains", "image_url": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?q=80&w=800", "is_veg": False, "is_bestseller": True, "is_available": True, "tags": ["Bestseller", "Rice"], "customizations": []},
-        
         # Breads
         {"id": "bread_1", "name": "Butter Naan", "description": "Soft leavened bread brushed with butter", "price": 60, "category": "Breads", "image_url": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": [], "customizations": []},
         {"id": "bread_2", "name": "Garlic Naan", "description": "Naan topped with garlic and coriander", "price": 80, "category": "Breads", "image_url": "https://images.unsplash.com/photo-1601050690597-df0568f70950?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": [], "customizations": []},
         {"id": "bread_3", "name": "Laccha Paratha", "description": "Layered whole wheat bread", "price": 70, "category": "Breads", "image_url": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": [], "customizations": []},
         {"id": "bread_4", "name": "Stuffed Kulcha", "description": "Naan stuffed with spiced potatoes or paneer", "price": 100, "category": "Breads", "image_url": "https://images.unsplash.com/photo-1574653853027-5d65dd32e2cd?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": ["Stuffed"], "customizations": []},
-        
         # Combos
         {"id": "combo_1", "name": "Veg Thali", "description": "Dal, Paneer, Sabzi, Rice, 2 Rotis, Raita, Salad, Sweet", "price": 350, "category": "Combos", "image_url": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": ["Value", "Complete Meal"], "customizations": []},
         {"id": "combo_2", "name": "Non-Veg Thali", "description": "Chicken Curry, Dal, Rice, 2 Rotis, Raita, Salad, Sweet", "price": 450, "category": "Combos", "image_url": "https://images.unsplash.com/photo-1567337710282-00832b415979?q=80&w=800", "is_veg": False, "is_bestseller": True, "is_available": True, "tags": ["Value", "Complete Meal"], "customizations": []},
         {"id": "combo_3", "name": "Biryani Combo", "description": "Chicken Biryani with Raita and Salan", "price": 420, "category": "Combos", "image_url": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?q=80&w=800", "is_veg": False, "is_bestseller": False, "is_available": True, "tags": ["Rice", "Combo"], "customizations": []},
-        
         # Beverages
         {"id": "bev_1", "name": "Masala Chai", "description": "Traditional Indian spiced tea", "price": 50, "category": "Beverages", "image_url": "https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": [], "customizations": []},
         {"id": "bev_2", "name": "Lassi", "description": "Sweet or salted yogurt drink", "price": 80, "category": "Beverages", "image_url": "https://images.unsplash.com/photo-1626201850760-208b18b474ff?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": [], "customizations": []},
         {"id": "bev_3", "name": "Fresh Lime Soda", "description": "Refreshing lime with soda, sweet or salted", "price": 60, "category": "Beverages", "image_url": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": [], "customizations": []},
-        
         # Desserts
         {"id": "dessert_1", "name": "Gulab Jamun", "description": "Deep fried milk dumplings in sugar syrup (2 pcs)", "price": 100, "category": "Desserts", "image_url": "https://images.unsplash.com/photo-1666190077072-ee1489e7cd5b?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": [], "customizations": []},
         {"id": "dessert_2", "name": "Kulfi", "description": "Traditional Indian ice cream with pistachios", "price": 120, "category": "Desserts", "image_url": "https://images.unsplash.com/photo-1623073284788-0d846f75e329?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": [], "customizations": []},
         {"id": "dessert_3", "name": "Kheer", "description": "Creamy rice pudding with cardamom and nuts", "price": 110, "category": "Desserts", "image_url": "https://images.unsplash.com/photo-1631452180539-96aca7d48617?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": [], "customizations": []},
     ]
-    
+
     await db.menu_items.insert_many(menu_items)
-    
+
     # Create admin user
-    admin_user = {
-        "id": str(uuid.uuid4()),
-        "name": "Admin",
-        "email": "admin@leevaakki.com",
-        "phone": "9876543210",
-        "password": hash_password("admin123"),
-        "is_admin": True,
-        "addresses": [],
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.users.insert_one(admin_user)
-    
+    existing_admin = await db.users.find_one({"email": "admin@leevaakki.com"})
+    if not existing_admin:
+        admin_user = {
+            "id": str(uuid.uuid4()),
+            "name": "Admin",
+            "email": "admin@leevaakki.com",
+            "phone": "9876543210",
+            "password": hash_password("admin123"),
+            "is_admin": True,
+            "addresses": [],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.users.insert_one(admin_user)
+
     # Create sample coupons
     coupons = [
         {"id": str(uuid.uuid4()), "code": "WELCOME20", "discount_type": "percentage", "discount_value": 20, "min_order_value": 300, "max_discount": 100, "valid_from": "2024-01-01T00:00:00Z", "valid_until": "2026-12-31T23:59:59Z", "usage_limit": 1000, "is_active": True, "created_at": datetime.now(timezone.utc).isoformat()},
         {"id": str(uuid.uuid4()), "code": "FLAT50", "discount_type": "fixed", "discount_value": 50, "min_order_value": 500, "max_discount": None, "valid_from": "2024-01-01T00:00:00Z", "valid_until": "2026-12-31T23:59:59Z", "usage_limit": 500, "is_active": True, "created_at": datetime.now(timezone.utc).isoformat()},
     ]
     await db.coupons.insert_many(coupons)
-    
-    return {"message": "Database seeded successfully", "menu_items": len(menu_items), "admin_email": "admin@leevaakki.com", "admin_password": "admin123"}
+
+    return {"message": "Database seeded successfully", "seeded": True}
+
+
+@api_router.post("/seed")
+async def seed_database():
+    return await _seed_database_if_empty()
 
 # ============== SETTINGS ROUTES ==============
 
@@ -683,6 +683,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health check endpoint for deployment platform
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy"}
+
+@app.on_event("startup")
+async def startup_db_init():
+    """Auto-seed database on startup if empty (for fresh production deployments)."""
+    try:
+        result = await _seed_database_if_empty()
+        if result.get("seeded"):
+            logger.info("Database auto-seeded on startup.")
+        else:
+            logger.info("Database already seeded. Skipping.")
+    except Exception as e:
+        logger.warning(f"Auto-seed on startup failed: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

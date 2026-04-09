@@ -6,7 +6,7 @@ Rebuild the "Lee Vaakki Dhaba" Flutter app as a Domino's-style digital ecosystem
 ## Tech Stack
 - **Frontend**: React (CRA), Lucide React icons, Poppins font
 - **Backend**: FastAPI (Python)
-- **Database**: MongoDB
+- **Database**: MongoDB (local in dev, Atlas in production)
 - **Mobile**: PWA + Capacitor (Android wrapper configured)
 
 ## Core Requirements
@@ -30,9 +30,17 @@ Rebuild the "Lee Vaakki Dhaba" Flutter app as a Domino's-style digital ecosystem
 8. Quantity controls [- qty +] on menu cards (DONE)
 9. Haptic vibration feedback via HTML5 Vibration API (DONE)
 10. Navbar branding "Lee Vaakki Dhaba" (DONE)
-11. Swiggy-style quick view popup - bottom sheet on mobile, centered card on desktop (DONE - Apr 9, 2026)
+11. Swiggy-style quick view popup - bottom sheet mobile, centered card desktop (DONE - Apr 9, 2026)
+12. Deployment fixes: health check endpoint, auto-seed on startup (DONE - Apr 9, 2026)
+
+## Deployment Changes (Apr 9, 2026)
+- Added `GET /api/health` endpoint returning `{"status": "healthy"}` for K8s health probes
+- Added `@app.on_event("startup")` that auto-seeds empty databases (for fresh Atlas deployments)
+- Extracted seed logic into reusable `_seed_database_if_empty()` function
+- Admin user creation is now idempotent (checks for existing admin before inserting)
 
 ## Key API Endpoints
+- GET /api/health (health check)
 - POST /api/auth/register, POST /api/auth/login, GET /api/auth/me
 - GET /api/menu
 - POST /api/orders, GET /api/orders, PUT /api/orders/{id}/status
@@ -41,6 +49,7 @@ Rebuild the "Lee Vaakki Dhaba" Flutter app as a Domino's-style digital ecosystem
 - POST /api/addresses, GET /api/addresses
 - POST /api/coupons/validate
 - POST /api/payments/upi/create
+- POST /api/seed
 
 ## DB Schema
 - users: {email, password_hash, name, phone, role, is_admin, created_at}
