@@ -6,7 +6,7 @@ import axios from "axios";
 import { ShoppingCart, User, MapPin, Clock, Phone, ChevronRight, Plus, Minus, Trash2, X, Check, Search, Star, Flame, Leaf, Menu as MenuIcon, Home, Package, LogOut, Settings, Utensils, ChefHat, Croissant, Gift, Coffee, IceCream2, Download, Smartphone } from "lucide-react";
 import AdminDashboard from "@/components/AdminDashboard";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
 
 // PWA Install Prompt

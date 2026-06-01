@@ -9,9 +9,11 @@ import {
   Settings, MapPin, Phone, Mail, Globe, MessageCircle
 } from "lucide-react";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
-const WS_URL = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+const WS_URL = BACKEND_URL 
+  ? BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://') 
+  : `${window.location.protocol === 'https:' ? 'wss://' : 'ws://'}${window.location.host}`;
 
 // Notification sound
 const playNotificationSound = () => {
