@@ -704,3 +704,6 @@ async def startup_db_init():
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+# Trigger hot reload of backend server in Comet
+
