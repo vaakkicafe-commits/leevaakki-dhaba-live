@@ -9,6 +9,33 @@ import AdminDashboard from "@/components/AdminDashboard";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
 
+const FALLBACK_MENU_ITEMS = [
+  { id: "starter_1", name: "Paneer Tikka", description: "Marinated cottage cheese cubes grilled to perfection in tandoor", price: 320, category: "Starters", image_url: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?q=80&w=800", is_veg: true, is_bestseller: true, is_available: true, tags: ["Bestseller", "Tandoor"], customizations: [] },
+  { id: "starter_2", name: "Chicken Tikka", description: "Tender chicken pieces marinated in spices and grilled", price: 380, category: "Starters", image_url: "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?q=80&w=800", is_veg: false, is_bestseller: true, is_available: true, tags: ["Bestseller", "Tandoor"], customizations: [] },
+  { id: "starter_3", name: "Aloo Tikki", description: "Crispy potato patties served with chutneys", price: 180, category: "Starters", image_url: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?q=80&w=800", is_veg: true, is_bestseller: false, is_available: true, tags: ["Street Food"], customizations: [] },
+  { id: "starter_4", name: "Fish Amritsari", description: "Crispy fried fish with Amritsari spices", price: 420, category: "Starters", image_url: "https://images.unsplash.com/photo-1534080564583-6be75777b70a?q=80&w=800", is_veg: false, is_bestseller: false, is_available: true, tags: ["Fried", "Spicy"], customizations: [] },
+  { id: "main_1", name: "Butter Chicken", description: "Tender chicken in a rich, creamy tomato gravy with butter", price: 450, category: "Mains", image_url: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?q=80&w=800", is_veg: false, is_bestseller: true, is_available: true, tags: ["Bestseller", "Creamy"], customizations: [] },
+  { id: "main_2", name: "Dal Makhani", description: "12-hour slow cooked black lentils with cream and butter", price: 280, category: "Mains", image_url: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?q=80&w=800", is_veg: true, is_bestseller: true, is_available: true, tags: ["Bestseller", "Slow Cooked"], customizations: [] },
+  { id: "main_3", name: "Kadai Paneer", description: "Cottage cheese cooked with bell peppers in kadai masala", price: 320, category: "Mains", image_url: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?q=80&w=800", is_veg: true, is_bestseller: false, is_available: true, tags: ["Spicy", "Paneer"], customizations: [] },
+  { id: "main_4", name: "Rogan Josh", description: "Kashmiri style slow-cooked lamb in aromatic spices", price: 520, category: "Mains", image_url: "https://images.unsplash.com/photo-1545247181-516773cae754?q=80&w=800", is_veg: false, is_bestseller: false, is_available: true, tags: ["Kashmiri", "Premium"], customizations: [] },
+  { id: "main_5", name: "Palak Paneer", description: "Cottage cheese cubes in creamy spinach gravy", price: 290, category: "Mains", image_url: "https://images.unsplash.com/photo-1618449840665-9ed506d73a34?q=80&w=800", is_veg: true, is_bestseller: false, is_available: true, tags: ["Healthy", "Creamy"], customizations: [] },
+  { id: "main_6", name: "Chicken Biryani", description: "Fragrant basmati rice layered with spiced chicken", price: 380, category: "Mains", image_url: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?q=80&w=800", is_veg: false, is_bestseller: true, is_available: true, tags: ["Bestseller", "Rice"], customizations: [] },
+  { id: "bread_1", name: "Butter Naan", description: "Soft leavened bread brushed with butter", price: 60, category: "Breads", image_url: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=800", is_veg: true, is_bestseller: true, is_available: true, tags: [], customizations: [] },
+  { id: "bread_2", name: "Garlic Naan", description: "Naan topped with garlic and coriander", price: 80, category: "Breads", image_url: "https://images.unsplash.com/photo-1601050690597-df0568f70950?q=80&w=800", is_veg: true, is_bestseller: false, is_available: true, tags: [], customizations: [] },
+  { id: "bread_3", name: "Laccha Paratha", description: "Layered whole wheat bread", price: 70, category: "Breads", image_url: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?q=80&w=800", is_veg: true, is_bestseller: false, is_available: true, tags: [], customizations: [] },
+  { id: "bread_4", name: "Stuffed Kulcha", description: "Naan stuffed with spiced potatoes or paneer", price: 100, category: "Breads", image_url: "https://images.unsplash.com/photo-1574653853027-5d65dd32e2cd?q=80&w=800", is_veg: true, is_bestseller: false, is_available: true, tags: ["Stuffed"], customizations: [] },
+  { id: "combo_1", name: "Veg Thali", description: "Dal, Paneer, Sabzi, Rice, 2 Rotis, Raita, Salad, Sweet", price: 350, category: "Combos", image_url: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?q=80&w=800", is_veg: true, is_bestseller: true, is_available: true, tags: ["Value", "Complete Meal"], customizations: [] },
+  { id: "combo_2", name: "Non-Veg Thali", description: "Chicken Curry, Dal, Rice, 2 Rotis, Raita, Salad, Sweet", price: 450, category: "Combos", image_url: "https://images.unsplash.com/photo-1567337710282-00832b415979?q=80&w=800", is_veg: false, is_bestseller: true, is_available: true, tags: ["Value", "Complete Meal"], customizations: [] },
+  { id: "combo_3", name: "Biryani Combo", description: "Chicken Biryani with Raita and Salan", price: 420, category: "Combos", image_url: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?q=80&w=800", is_veg: false, is_bestseller: false, is_available: true, tags: ["Rice", "Combo"], customizations: [] },
+  { id: "bev_1", name: "Masala Chai", description: "Traditional Indian spiced tea", price: 50, category: "Beverages", image_url: "https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?q=80&w=800", is_veg: true, is_bestseller: false, is_available: true, tags: [], customizations: [] },
+  { id: "bev_2", name: "Lassi", description: "Sweet or salted yogurt drink", price: 80, category: "Beverages", image_url: "https://images.unsplash.com/photo-1626201850760-208b18b474ff?q=80&w=800", is_veg: true, is_bestseller: true, is_available: true, tags: [], customizations: [] },
+  { id: "bev_3", name: "Fresh Lime Soda", description: "Refreshing lime with soda, sweet or salted", price: 60, category: "Beverages", image_url: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=800", is_veg: true, is_bestseller: false, is_available: true, tags: [], customizations: [] },
+  { id: "dessert_1", name: "Gulab Jamun", description: "Deep fried milk dumplings in sugar syrup (2 pcs)", price: 100, category: "Desserts", image_url: "https://images.unsplash.com/photo-1666190077072-ee1489e7cd5b?q=80&w=800", is_veg: true, is_bestseller: true, is_available: true, tags: [], customizations: [] },
+  { id: "dessert_2", name: "Kulfi", description: "Traditional Indian ice cream with pistachios", price: 120, category: "Desserts", image_url: "https://images.unsplash.com/photo-1623073284788-0d846f75e329?q=80&w=800", is_veg: true, is_bestseller: false, is_available: true, tags: [], customizations: [] },
+  { id: "dessert_3", name: "Kheer", description: "Creamy rice pudding with cardamom and nuts", price: 110, category: "Desserts", image_url: "https://images.unsplash.com/photo-1631452180539-96aca7d48617?q=80&w=800", is_veg: true, is_bestseller: false, is_available: true, tags: [], customizations: [] }
+];
+
+
 // PWA Install Prompt
 const InstallPrompt = () => {
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -262,9 +289,14 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get(`${API}/menu`).then(res => {
-      setBestsellers(res.data.items.filter(i => i.is_bestseller).slice(0, 6));
-    });
+    axios.get(`${API}/menu`)
+      .then(res => {
+        setBestsellers(res.data.items.filter(i => i.is_bestseller).slice(0, 6));
+      })
+      .catch(err => {
+        console.warn("Failed to fetch menu from API, using fallback data", err);
+        setBestsellers(FALLBACK_MENU_ITEMS.filter(i => i.is_bestseller).slice(0, 6));
+      });
   }, []);
 
   const categories = [
@@ -516,11 +548,18 @@ const MenuPage = () => {
   }, [location]);
 
   useEffect(() => {
-    axios.get(`${API}/menu`).then(res => {
-      setItems(res.data.items);
-      const cats = [...new Set(res.data.items.map(i => i.category))];
-      setCategories(["All", ...cats]);
-    });
+    axios.get(`${API}/menu`)
+      .then(res => {
+        setItems(res.data.items);
+        const cats = [...new Set(res.data.items.map(i => i.category))];
+        setCategories(["All", ...cats]);
+      })
+      .catch(err => {
+        console.warn("Failed to fetch menu from API, using fallback data", err);
+        setItems(FALLBACK_MENU_ITEMS);
+        const cats = [...new Set(FALLBACK_MENU_ITEMS.map(i => i.category))];
+        setCategories(["All", ...cats]);
+      });
   }, []);
 
   const filteredItems = items.filter(item => {
