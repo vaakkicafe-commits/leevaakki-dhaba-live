@@ -35,7 +35,7 @@ The output will be in `build/web/` directory.
 - Build command: Runs Flutter build for web
 - Output directory: `build/web`
 
-**package.json** - Contains build scripts
+**package.json** - Contains  build scripts
 
 ### Deploy Steps
 
