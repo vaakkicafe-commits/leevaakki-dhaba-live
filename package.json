@@ -1,11 +1,11 @@
 {
   "name": "lee-vaakki-dhaba",
   "version": "1.0.0",
-  "description": "Lee Vaakki Dhaba - Flutter web application",
+  "description": "Lee Vaakki Dhaba - React Tailwind Web App",
   "scripts": {
-    "build": "echo 'Pre-built Flutter app - upload build/web folder'"
+    "build": "cd frontend && yarn install && yarn build"
   },
-  "keywords": ["flutter", "web", "vercel", "restaurant"],
+  "keywords": ["react", "tailwind", "vercel", "restaurant"],
   "author": "Lee Vaakki Dhaba",
   "license": "MIT"
 }
