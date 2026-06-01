@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -14,6 +14,8 @@ import bcrypt
 import jwt
 import json
 import asyncio
+import hmac
+import hashlib
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -115,6 +117,8 @@ class OrderCreate(BaseModel):
     coupon_code: Optional[str] = None
     special_instructions: Optional[str] = None
     customer_phone: Optional[str] = None  # For WhatsApp notifications
+    channel: str = "OWN_DHABA"  # OWN_DHABA, OWN_CAFE, SWIGGY, ZOMATO, DINE_IN
+    source_order_id: Optional[str] = None  # Third-party platform order ID
 
 class OrderStatusUpdate(BaseModel):
     status: str
@@ -343,6 +347,8 @@ async def create_order(order: OrderCreate, user = Depends(get_current_user)):
         "payment_status": "pending",
         "special_instructions": order.special_instructions,
         "status": "placed",
+        "channel": order.channel,
+        "source_order_id": order.source_order_id,
         "status_history": [
             {"status": "placed", "timestamp": datetime.now(timezone.utc).isoformat(), "notes": "Order placed successfully"}
         ],
@@ -363,6 +369,7 @@ async def create_order(order: OrderCreate, user = Depends(get_current_user)):
             "total": order_doc["total"],
             "items_count": len(order_doc["items"]),
             "order_type": order_doc["order_type"],
+            "channel": order_doc["channel"],
             "created_at": order_doc["created_at"]
         }
     })
@@ -442,10 +449,12 @@ async def delete_menu_item(item_id: str, admin = Depends(get_admin_user)):
     return {"message": "Item deleted"}
 
 @api_router.get("/admin/orders")
-async def get_all_orders(status: Optional[str] = None, admin = Depends(get_admin_user)):
+async def get_all_orders(status: Optional[str] = None, channel: Optional[str] = None, admin = Depends(get_admin_user)):
     query = {}
     if status:
         query["status"] = status
+    if channel:
+        query["channel"] = channel
     orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     return {"orders": orders}
 
@@ -673,6 +682,162 @@ async def confirm_payment(order_id: str, transaction_id: str, user = Depends(get
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
     return {"message": "Payment confirmed"}
+
+class ThirdPartyOrder(BaseModel):
+    items: List[CartItem]
+    order_type: str = "delivery"
+    channel: str  # SWIGGY, ZOMATO
+    source_order_id: str
+    customer_name: str
+    customer_phone: str
+    customer_address: Optional[str] = None
+    subtotal: float
+    discount: float = 0.0
+    tax: float = 0.0
+    delivery_fee: float = 0.0
+    total: float
+    special_instructions: Optional[str] = None
+
+@api_router.post("/orders/webhook/third-party")
+async def ingest_third_party_order(order: ThirdPartyOrder):
+    # Check if duplicate order
+    existing = await db.orders.find_one({"source_order_id": order.source_order_id, "channel": order.channel})
+    if existing:
+        return {"status": "ignored", "reason": "duplicate"}
+        
+    # Generate order number prefixed by channel
+    prefix = "SWG" if order.channel == "SWIGGY" else "ZMT"
+    order_count = await db.orders.count_documents({"channel": order.channel})
+    order_number = f"{prefix}{str(order_count + 1).zfill(6)}"
+    
+    # Resolve items details
+    items_details = []
+    menu_item_ids = [item.menu_item_id for item in order.items]
+    menu_items_cursor = db.menu_items.find({"id": {"$in": menu_item_ids}}, {"_id": 0})
+    menu_items_list = await menu_items_cursor.to_list(None)
+    menu_items_dict = {item["id"]: item for item in menu_items_list}
+    
+    for cart_item in order.items:
+        menu_item = menu_items_dict.get(cart_item.menu_item_id)
+        if not menu_item:
+            menu_item = {
+                "id": cart_item.menu_item_id,
+                "name": f"External Item ({cart_item.menu_item_id})",
+                "price": 0.0,
+                "category": "Third-Party",
+                "image_url": ""
+            }
+        items_details.append({
+            "menu_item": menu_item,
+            "quantity": cart_item.quantity,
+            "customizations": cart_item.customizations,
+            "special_instructions": cart_item.special_instructions,
+            "item_total": menu_item.get("price", 0.0) * cart_item.quantity
+        })
+        
+    order_doc = {
+        "id": str(uuid.uuid4()),
+        "order_number": order_number,
+        "user_id": "third_party",
+        "user_name": order.customer_name,
+        "user_phone": order.customer_phone,
+        "items": items_details,
+        "subtotal": order.subtotal,
+        "discount": order.discount,
+        "coupon_code": None,
+        "tax": order.tax,
+        "delivery_fee": order.delivery_fee,
+        "total": order.total,
+        "order_type": order.order_type,
+        "delivery_address": {"address_line": order.customer_address} if order.customer_address else None,
+        "payment_method": "online",
+        "payment_status": "paid",
+        "special_instructions": order.special_instructions,
+        "status": "placed",
+        "channel": order.channel,
+        "source_order_id": order.source_order_id,
+        "status_history": [
+            {"status": "placed", "timestamp": datetime.now(timezone.utc).isoformat(), "notes": f"Order ingested from {order.channel}"}
+        ],
+        "estimated_time": 45,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.orders.insert_one(order_doc)
+    del order_doc["_id"]
+    
+    # Broadcast new order notification to admin
+    await manager.broadcast({
+        "type": "new_order",
+        "order": {
+            "order_number": order_doc["order_number"],
+            "user_name": order_doc["user_name"],
+            "total": order_doc["total"],
+            "items_count": len(order_doc["items"]),
+            "order_type": order_doc["order_type"],
+            "channel": order_doc["channel"],
+            "created_at": order_doc["created_at"]
+        }
+    })
+    
+    return {"status": "ok", "order_number": order_number}
+
+@api_router.post("/payments/razorpay/webhook")
+async def razorpay_webhook(request: Request):
+    body = await request.body()
+    signature = request.headers.get("X-Razorpay-Signature")
+    
+    webhook_secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET")
+    if webhook_secret and signature:
+        expected_sig = hmac.new(
+            webhook_secret.encode('utf-8'),
+            body,
+            hashlib.sha256
+        ).hexdigest()
+        
+        if not hmac.compare_digest(expected_sig, signature):
+            raise HTTPException(status_code=400, detail="Invalid webhook signature")
+            
+    try:
+        payload = json.loads(body.decode('utf-8'))
+        event = payload.get("event")
+        
+        if event == "payment.captured":
+            payment_entity = payload["payload"]["payment"]["entity"]
+            razorpay_order_id = payment_entity.get("order_id")
+            transaction_id = payment_entity.get("id")
+            
+            if razorpay_order_id:
+                order = await db.orders.find_one({"source_order_id": razorpay_order_id})
+                if order:
+                    await db.orders.update_one(
+                        {"id": order["id"]},
+                        {
+                            "$set": {
+                                "payment_status": "paid",
+                                "payment_transaction_id": transaction_id,
+                                "status": "placed",
+                                "updated_at": datetime.now(timezone.utc).isoformat()
+                            },
+                            "$push": {
+                                "status_history": {
+                                    "status": "placed",
+                                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                                    "notes": f"Payment captured via Razorpay. Transaction: {transaction_id}"
+                                }
+                            }
+                        }
+                    )
+                    await manager.broadcast({
+                        "type": "payment_captured",
+                        "order_number": order["order_number"],
+                        "total": order["total"]
+                    })
+    except Exception as e:
+        logger.warning(f"Error processing Razorpay webhook: {e}")
+        
+    return {"status": "ok"}
 
 app.include_router(api_router)
 

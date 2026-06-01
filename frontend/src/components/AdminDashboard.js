@@ -411,6 +411,7 @@ const OverviewTab = ({ stats, orders }) => {
             <thead>
               <tr>
                 <th>Order #</th>
+                <th>Channel</th>
                 <th>Customer</th>
                 <th>Items</th>
                 <th>Total</th>
@@ -422,6 +423,7 @@ const OverviewTab = ({ stats, orders }) => {
               {recentOrders.map(order => (
                 <tr key={order.id}>
                   <td className="order-num">{order.order_number}</td>
+                  <td><ChannelBadge channel={order.channel || "OWN_DHABA"} /></td>
                   <td>{order.user_name}</td>
                   <td>{order.items?.length} items</td>
                   <td className="order-total">₹{order.total?.toFixed(0)}</td>
@@ -456,12 +458,15 @@ const OverviewTab = ({ stats, orders }) => {
 // Orders Tab
 const OrdersTab = ({ orders, token, onUpdate }) => {
   const [filter, setFilter] = useState("all");
+  const [channelFilter, setChannelFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updating, setUpdating] = useState(false);
 
-  const filteredOrders = filter === "all" 
-    ? orders 
-    : orders.filter(o => o.status === filter);
+  const filteredOrders = orders.filter(o => {
+    const matchesStatus = filter === "all" || o.status === filter;
+    const matchesChannel = channelFilter === "all" || o.channel === channelFilter;
+    return matchesStatus && matchesChannel;
+  });
 
   const updateStatus = async (orderId, newStatus) => {
     setUpdating(true);
@@ -484,8 +489,8 @@ const OrdersTab = ({ orders, token, onUpdate }) => {
   return (
     <div className="orders-tab">
       {/* Filters */}
-      <div className="orders-filters">
-        <div className="filter-tabs">
+      <div className="orders-filters" style={{ display: "flex", flexWrap: "wrap", gap: "16px", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+        <div className="filter-tabs" style={{ marginBottom: 0 }}>
           {["all", "placed", "confirmed", "preparing", "ready", "delivered"].map(status => (
             <button
               key={status}
@@ -499,6 +504,33 @@ const OrdersTab = ({ orders, token, onUpdate }) => {
             </button>
           ))}
         </div>
+        
+        {/* Channel Filter Selector */}
+        <div className="channel-filter-selector" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--gray-700)" }}>Channel:</span>
+          <select 
+            value={channelFilter} 
+            onChange={(e) => setChannelFilter(e.target.value)}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: "1px solid var(--gray-300)",
+              background: "white",
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "var(--gray-800)",
+              outline: "none",
+              cursor: "pointer"
+            }}
+          >
+            <option value="all">All Channels</option>
+            <option value="OWN_DHABA">Dhaba Website</option>
+            <option value="OWN_CAFE">Cafe Website</option>
+            <option value="SWIGGY">Swiggy</option>
+            <option value="ZOMATO">Zomato</option>
+            <option value="DINE_IN">Dine-in</option>
+          </select>
+        </div>
       </div>
 
       {/* Orders List */}
@@ -506,9 +538,10 @@ const OrdersTab = ({ orders, token, onUpdate }) => {
         {filteredOrders.map(order => (
           <div key={order.id} className="order-card-admin" data-testid={`admin-order-${order.order_number}`}>
             <div className="order-header-admin">
-              <div className="order-id">
+              <div className="order-id" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
                 <span className="order-number">#{order.order_number}</span>
                 <span className="order-type-badge">{order.order_type}</span>
+                <ChannelBadge channel={order.channel || "OWN_DHABA"} />
               </div>
               <StatusBadge status={order.status} />
             </div>
@@ -923,6 +956,34 @@ const StatusBadge = ({ status }) => {
   return (
     <span className="status-badge" style={{ background: `${config.color}20`, color: config.color }}>
       <Icon size={14} /> {config.label}
+    </span>
+  );
+};
+
+// Channel Badge Component
+const ChannelBadge = ({ channel }) => {
+  const channelConfig = {
+    OWN_DHABA: { color: "#E65100", label: "Dhaba Web" },
+    OWN_CAFE: { color: "#6F4E37", label: "Cafe Web" },
+    SWIGGY: { color: "#FC8019", label: "Swiggy" },
+    ZOMATO: { color: "#CB202D", label: "Zomato" },
+    DINE_IN: { color: "#1E88E5", label: "Dine-in" }
+  };
+  const config = channelConfig[channel] || { color: "#757575", label: channel || "Web" };
+  return (
+    <span className="channel-badge" style={{
+      background: `${config.color}15`,
+      color: config.color,
+      border: `1px solid ${config.color}40`,
+      padding: "2px 8px",
+      borderRadius: "4px",
+      fontSize: "12px",
+      fontWeight: "600",
+      marginLeft: "8px",
+      display: "inline-flex",
+      alignItems: "center"
+    }}>
+      {config.label}
     </span>
   );
 };
