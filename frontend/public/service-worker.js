@@ -1,42 +1,53 @@
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = 'lee-vaakki-dhaba-v1';
+const CACHE_VERSION = 'v1.0.1';
+const CACHE_NAME = `lee-vaakki-dhaba-static-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/static/js/bundle.js',
-  '/static/css/main.css'
+  '/manifest.json'
 ];
 
 const API_CACHE_NAME = 'lee-vaakki-api-v1';
 const API_URLS = ['/api/menu', '/api/settings'];
 
-// Install event - cache static assets
+// Install event - cache static assets defensively
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('Caching static assets');
-      return cache.addAll(STATIC_ASSETS).catch(err => {
-        console.log('Some assets failed to cache:', err);
-      });
-    })
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      console.log('Defensively caching static assets');
+      
+      for (const url of STATIC_ASSETS) {
+        try {
+          const response = await fetch(url, { cache: 'no-cache' });
+          if (response.ok) {
+            await cache.put(url, response.clone());
+          } else {
+            console.warn('[SW] Skipping cache for:', url, 'status:', response.status);
+          }
+        } catch (err) {
+          console.warn('[SW] Failed to fetch for cache:', url, err);
+        }
+      }
+      return self.skipWaiting();
+    })()
   );
-  self.skipWaiting();
 });
 
 // Activate event - clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    (async () => {
+      const cacheNames = await caches.keys();
+      await Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME && name !== API_CACHE_NAME)
+          .filter((name) => name.startsWith('lee-vaakki-dhaba-static-') && name !== CACHE_NAME && name !== API_CACHE_NAME)
           .map((name) => caches.delete(name))
       );
-    })
+      return self.clients.claim();
+    })()
   );
-  self.clients.claim();
 });
 
 // Fetch event - serve from cache, fallback to network

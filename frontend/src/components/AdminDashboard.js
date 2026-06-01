@@ -8,12 +8,69 @@ import {
   Filter, MoreVertical, X, Save, Leaf, Image, Bell, Volume2, VolumeX,
   Settings, MapPin, Phone, Mail, Globe, MessageCircle
 } from "lucide-react";
+import { useHealth } from "../hooks/useHealth";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
 const WS_URL = BACKEND_URL 
   ? BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://') 
   : `${window.location.protocol === 'https:' ? 'wss://' : 'ws://'}${window.location.host}`;
+
+const BackendStatusBadge = () => {
+  const { state, latencyMs, lastChecked } = useHealth(30000);
+
+  const getStatusColor = () => {
+    switch (state) {
+      case "ok": return "#4CAF50";
+      case "degraded": return "#FFC107";
+      case "down": return "#f44336";
+      default: return "#757575";
+    }
+  };
+
+  const getStatusLabel = () => {
+    switch (state) {
+      case "ok": return "Backend OK";
+      case "degraded": return "Latency High";
+      case "down": return "Backend Offline";
+      default: return "Checking Backend...";
+    }
+  };
+
+  return (
+    <div className="backend-status-badge" style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '8px',
+      background: 'var(--gray-100)',
+      padding: '6px 12px',
+      borderRadius: 'var(--radius-full)',
+      border: '1px solid var(--gray-300)',
+      fontSize: '13px',
+      fontWeight: '500',
+      color: 'var(--gray-700)',
+    }}>
+      <span style={{
+        width: '8px',
+        height: '8px',
+        borderRadius: '50%',
+        background: getStatusColor(),
+        boxShadow: `0 0 8px ${getStatusColor()}80`,
+      }} />
+      <span>{getStatusLabel()}</span>
+      {latencyMs !== undefined && state !== "down" && (
+        <span style={{ color: 'var(--gray-500)', fontSize: '11px' }}>
+          ({Math.round(latencyMs)}ms)
+        </span>
+      )}
+      {lastChecked && (
+        <span style={{ color: 'var(--gray-500)', fontSize: '11px', borderLeft: '1px solid var(--gray-300)', paddingLeft: '8px' }}>
+          {lastChecked.toLocaleTimeString()}
+        </span>
+      )}
+    </div>
+  );
+};
 
 // Notification sound
 const playNotificationSound = () => {
@@ -251,6 +308,7 @@ const AdminDashboard = ({ user, token }) => {
         <header className="admin-header">
           <h1>{tabs.find(t => t.id === activeTab)?.label}</h1>
           <div className="header-actions">
+            <BackendStatusBadge />
             <button 
               className={`sound-toggle ${soundEnabled ? 'on' : 'off'}`}
               onClick={() => setSoundEnabled(!soundEnabled)}
