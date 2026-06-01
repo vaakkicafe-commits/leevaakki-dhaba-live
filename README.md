@@ -27,7 +27,7 @@ Build the optimized web version:
 
 The output will be in `build/web/` directory.
 
-## Deployment to Vercel
+## Deployment to  Vercel
 
 ### Configuration Files
 
