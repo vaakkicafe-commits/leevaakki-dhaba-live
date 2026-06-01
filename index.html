@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lee Vaakki Dhaba | Authentic North Indian Flavors</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #046A38;
+            --primary-light: #068e4b;
+            --accent: #F24E1E;
+            --accent-light: #ff683b;
+            --bg: #FDFBF7;
+            --text-dark: #1C160E;
+            --text-muted: #6B655C;
+            --white: #ffffff;
+            --card-shadow: 0 10px 30px rgba(4, 106, 56, 0.05);
+            --border: #EAE3D9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* Header Styles */
+        header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(253, 251, 247, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            font-size: 1.75rem;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-brand {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.1;
+        }
+
+        .logo-sub {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .cart-btn {
+            background: none;
+            border: none;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cart-icon {
+            width: 28px;
+            height: 28px;
+            stroke: var(--text-dark);
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -4px;
+            right: -6px;
+            background-color: var(--accent);
+            color: var(--white);
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-btn {
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .login-btn:hover {
+            background-color: var(--primary-light);
+        }
+
+        /* Hero Styles */
+        .hero {
+            background: linear-gradient(rgba(4, 106, 56, 0.92), rgba(2, 60, 31, 0.96)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1000&q=80');
+            background-size: cover;
+            background-position: center;
+            color: var(--white);
+            padding: 3rem 1.5rem;
+            text-align: center;
+        }
+
+        .hero-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .hero p {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .hero-ctas {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .btn-order {
+            background-color: var(--accent);
+            color: var(--white);
+            text-decoration: none;
+            padding: 0.85rem 1.75rem;
+            border-radius: 999px;
+            font-weight: 700;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn-order:hover {
+            background-color: var(--accent-light);
+            transform: translateY(-1px);
+        }
+
+        .btn-track {
+            background: transparent;
+            color: var(--white);
+            text-decoration: none;
+            padding: 0.85rem 1.75rem;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 999px;
+            font-weight: 600;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        .btn-track:hover {
+            border-color: var(--white);
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            max-width: 500px;
+            margin: 0 auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            padding-top: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .stat-num {
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Offer Banner */
+        .offer-banner {
+            background: linear-gradient(135deg, #FF6B35 0%, var(--accent) 100%);
+            color: var(--white);
+            padding: 1rem 1.25rem;
+            margin: 1.5rem auto;
+            max-width: 600px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(242, 78, 30, 0.2);
+        }
+
+        .offer-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .badge-first {
+            background-color: rgba(255, 255, 255, 0.2);
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .offer-text h2 {
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        .offer-text p {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .offer-right {
+            text-align: right;
+        }
+
+        .promo-code {
+            background-color: var(--white);
+            color: var(--accent);
+            font-weight: 800;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        /* Categories Section */
+        .section-title {
+            max-width: 600px;
+            margin: 2rem auto 1rem;
+            padding: 0 1.25rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .categories {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 0.5rem 1.25rem 1.5rem;
+            max-width: 600px;
+            margin: 0 auto;
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .categories::-webkit-scrollbar {
+            display: none; /* Safari & Chrome */
+        }
+
+        .category-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 75px;
+            cursor: pointer;
+        }
+
+        .category-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--white);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: var(--card-shadow);
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .category-card:hover .category-img {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .category-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        /* Menu Grid */
+        .menu-section {
+            max-width: 600px;
+            margin: 0 auto 4rem;
+            padding: 0 1.25rem;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .food-card {
+            background-color: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s;
+        }
+
+        .food-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .food-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+
+        .food-info {
+            flex-grow: 1;
+        }
+
+        .food-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .food-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+        }
+
+        .food-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .food-price {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .btn-add {
+            background-color: var(--white);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 0.35rem 1rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .btn-add:hover {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+
+        /* Cart Drawer */
+        .cart-drawer {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            background-color: var(--bg);
+            border-left: 1px solid var(--border);
+            box-shadow: -5px 0 30px rgba(0,0,0,0.1);
+            z-index: 1000;
+            transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cart-drawer.active {
+            right: 0;
+        }
+
+        .cart-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cart-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .close-cart {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .cart-items {
+            flex-grow: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .cart-empty {
+            text-align: center;
+            color: var(--text-muted);
+            margin: auto;
+        }
+
+        .cart-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            background-color: var(--white);
+        }
+
+        .cart-total-row {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 1.15rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-checkout {
+            display: block;
+            width: 100%;
+            background-color: var(--accent);
+            color: var(--white);
+            border: none;
+            padding: 1rem;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+
+        .btn-checkout:hover {
+            background-color: var(--accent-light);
+        }
+
+        footer {
+            background-color: #fff7ef;
+            border-top: 1px solid var(--border);
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .footer-logo {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="nav-container">
+            <div class="logo-group">
+                <span class="logo-icon">🍛</span>
+                <div class="logo-text">
+                    <span class="logo-brand">Lee Vaakki</span>
+                    <span class="logo-sub">Dhaba</span>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <button class="cart-btn" onclick="toggleCart(true)">
+                    <svg class="cart-icon" viewBox="0 0 24 24">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span class="cart-badge" id="cart-count">1</span>
+                </button>
+                <button class="login-btn">Login</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-container">
+                <h1>Authentic North Indian Flavors</h1>
+                <p>Experience the legendary taste of Punjab at Lee Vaakki Dhaba. Rich spices, direct farm ingredients, and centuries of tradition in every bite.</p>
+                <div class="hero-ctas">
+                    <a href="#menu" class="btn-order">Order Now</a>
+                    <a href="#" class="btn-track">Track Order</a>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-num">35+</span>
+                        <span class="stat-label">Years Legacy</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num">50K+</span>
+                        <span class="stat-label">Happy Customers</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num">4.5 ★</span>
+                        <span class="stat-label">Rating</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Offer Banner -->
+        <section class="offer-banner">
+            <div class="offer-left">
+                <span class="badge-first">First Order</span>
+                <div class="offer-text">
+                    <h2>Get 20% OFF</h2>
+                    <p>On your very first delivery order</p>
+                </div>
+            </div>
+            <div class="offer-right">
+                <span class="promo-code">WELCOME20</span>
+            </div>
+        </section>
+
+        <!-- Categories -->
+        <h2 class="section-title">What's on your mind?</h2>
+        <section class="categories">
+            <div class="category-card" onclick="scrollToCategory('tandoori')">
+                <div class="category-img">🫓</div>
+                <span class="category-name">Tandoori</span>
+            </div>
+            <div class="category-card" onclick="scrollToCategory('curries')">
+                <div class="category-img">🍲</div>
+                <span class="category-name">Curries</span>
+            </div>
+            <div class="category-card" onclick="scrollToCategory('thalis')">
+                <div class="category-img">🍱</div>
+                <span class="category-name">Thalis</span>
+            </div>
+            <div class="category-card" onclick="scrollToCategory('biryani')">
+                <div class="category-img">🍛</div>
+                <span class="category-name">Biryani</span>
+            </div>
+            <div class="category-card" onclick="scrollToCategory('desserts')">
+                <div class="category-img">🍨</div>
+                <span class="category-name">Desserts</span>
+            </div>
+        </section>
+
+        <!-- Food List -->
+        <h2 class="section-title" id="menu">Dhaba Specials</h2>
+        <section class="menu-section">
+            <!-- Butter Chicken -->
+            <div class="food-card" data-category="curries">
+                <img src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=150&q=80" alt="Butter Chicken" class="food-img">
+                <div class="food-info">
+                    <h3 class="food-name">Classic Butter Chicken</h3>
+                    <p class="food-desc">Tender tandoori chicken cooked in a rich, buttery, spiced tomato gravy.</p>
+                    <div class="food-footer">
+                        <span class="food-price">₹340</span>
+                        <button class="btn-add" onclick="addToCart('Classic Butter Chicken', 340)">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paneer Masala -->
+            <div class="food-card" data-category="curries">
+                <img src="https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=150&q=80" alt="Paneer Masala" class="food-img">
+                <div class="food-info">
+                    <h3 class="food-name">Paneer Tikka Masala</h3>
+                    <p class="food-desc">Grilled paneer cubes tossed in a robust and flavorful onion-tomato gravy.</p>
+                    <div class="food-footer">
+                        <span class="food-price">₹290</span>
+                        <button class="btn-add" onclick="addToCart('Paneer Tikka Masala', 290)">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dal Makhani -->
+            <div class="food-card" data-category="curries">
+                <img src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=150&q=80" alt="Dal Makhani" class="food-img">
+                <div class="food-info">
+                    <h3 class="food-name">Amritsari Dal Makhani</h3>
+                    <p class="food-desc">Slow-cooked black lentils simmered overnight with cream and house spices.</p>
+                    <div class="food-footer">
+                        <span class="food-price">₹240</span>
+                        <button class="btn-add" onclick="addToCart('Amritsari Dal Makhani', 240)">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Garlic Naan -->
+            <div class="food-card" data-category="tandoori">
+                <img src="https://images.unsplash.com/photo-1601050690597-df056fb4ce78?auto=format&fit=crop&w=150&q=80" alt="Garlic Naan" class="food-img">
+                <div class="food-info">
+                    <h3 class="food-name">Butter Garlic Naan</h3>
+                    <p class="food-desc">Freshly baked tandoori bread brushed with garlic butter and fresh cilantro.</p>
+                    <div class="food-footer">
+                        <span class="food-price">₹80</span>
+                        <button class="btn-add" onclick="addToCart('Butter Garlic Naan', 80)">Add</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Side Cart Drawer -->
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="cart-header">
+            <h3>Your Order</h3>
+            <button class="close-cart" onclick="toggleCart(false)">&times;</button>
+        </div>
+        <div class="cart-items" id="cart-items-container">
+            <p class="cart-empty">Your cart is empty.</p>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total-row">
+                <span>Total:</span>
+                <span id="cart-total-price">₹0</span>
+            </div>
+            <button class="btn-checkout" onclick="checkout()">Proceed to Checkout</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-logo">🍛 Lee Vaakki Dhaba</div>
+        <p>&copy; 2026 Lee Vaakki™ Pvt Ltd. All rights reserved.</p>
+        <p style="margin-top: 1rem;"><a href="https://leevaakki.com" style="color: var(--primary); text-decoration: none; font-weight: 600;">← Back to Brand Home</a></p>
+    </footer>
+
+    <script>
+        let cart = [];
+
+        function addToCart(name, price) {
+            const existing = cart.find(item => item.name === name);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ name, price, quantity: 1 });
+            }
+            updateCart();
+            toggleCart(true);
+        }
+
+        function updateCart() {
+            const container = document.getElementById('cart-items-container');
+            const countBadge = document.getElementById('cart-count');
+            const totalText = document.getElementById('cart-total-price');
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="cart-empty">Your cart is empty.</p>';
+                countBadge.textContent = '0';
+                totalText.textContent = '₹0';
+                return;
+            }
+
+            let total = 0;
+            let count = 0;
+            container.innerHTML = '';
+
+            cart.forEach((item, index) => {
+                total += item.price * item.quantity;
+                count += item.quantity;
+
+                const itemEl = document.createElement('div');
+                itemEl.style.display = 'flex';
+                itemEl.style.justify = 'space-between';
+                itemEl.style.alignItems = 'center';
+                itemEl.style.borderBottom = '1px solid #eee';
+                itemEl.style.paddingBottom = '0.75rem';
+
+                itemEl.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.95rem;">${item.name}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">₹${item.price} x ${item.quantity}</div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button onclick="changeQty(${index}, -1)" style="border:1px solid var(--border); background:white; padding: 2px 8px; border-radius:4px; font-weight:700; cursor:pointer;">-</button>
+                        <span style="font-weight: 600;">${item.quantity}</span>
+                        <button onclick="changeQty(${index}, 1)" style="border:1px solid var(--border); background:white; padding: 2px 8px; border-radius:4px; font-weight:700; cursor:pointer;">+</button>
+                    </div>
+                `;
+                container.appendChild(itemEl);
+            });
+
+            countBadge.textContent = count;
+            totalText.textContent = '₹' + total;
+        }
+
+        function changeQty(index, change) {
+            cart[index].quantity += change;
+            if (cart[index].quantity <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCart();
+        }
+
+        function toggleCart(show) {
+            const drawer = document.getElementById('cart-drawer');
+            if (show) {
+                drawer.classList.add('active');
+            } else {
+                drawer.classList.remove('active');
+            }
+        }
+
+        function scrollToCategory(cat) {
+            const target = document.getElementById('menu');
+            target.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function checkout() {
+            alert('Your order is being sent to the kitchen! Thank you for ordering from Lee Vaakki Dhaba.');
+            cart = [];
+            updateCart();
+            toggleCart(false);
+        }
+
+        // Initialize cart with one item to match your screenshot
+        addToCart('Classic Butter Chicken', 340);
+        updateCart();
+        toggleCart(false);
+    </script>
+</body>
+</html>
