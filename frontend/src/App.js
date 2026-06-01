@@ -340,6 +340,126 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Ordering Channels Section */}
+      <section className="ordering-channels-section" style={{
+        maxWidth: "1200px",
+        margin: "40px auto",
+        padding: "0 20px"
+      }}>
+        <div className="ordering-channels-card" style={{
+          background: "#FFFDF9",
+          border: "1px dashed #FF6B3550",
+          borderRadius: "16px",
+          padding: "32px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "24px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <span style={{ color: "#2E7D32", fontWeight: "700", fontSize: "14px", letterSpacing: "1px", textTransform: "uppercase" }}>ONLINE ORDERING</span>
+            <h2 style={{ fontSize: "28px", fontWeight: "800", color: "#1A1A1A", marginTop: "8px", marginBottom: "8px" }}>How would you like to order today?</h2>
+            <p style={{ color: "#666", fontSize: "15px", maxWidth: "600px", margin: "0 auto" }}>
+              Get our authentic tandoori and traditional Punjabi dishes delivered to your doorstep. Order directly for best prices and flat discounts!
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", alignItems: "center" }}>
+            <button 
+              onClick={() => navigate("/menu")} 
+              className="btn-primary" 
+              style={{
+                width: "100%",
+                maxWidth: "400px",
+                padding: "16px 32px",
+                fontSize: "16px",
+                fontWeight: "700",
+                background: "#2E7D32",
+                color: "white",
+                border: "none",
+                borderRadius: "30px",
+                cursor: "pointer",
+                boxShadow: "0 6px 20px rgba(46, 125, 50, 0.2)",
+                transition: "all 0.3s ease",
+                textAlign: "center"
+              }}
+            >
+              Order Directly from Lee Vaakki Dhaba
+            </button>
+
+            <div style={{
+              width: "100%",
+              maxWidth: "400px",
+              borderTop: "1px solid #eee",
+              paddingTop: "20px",
+              textAlign: "center"
+            }}>
+              <p style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: "600" }}>
+                Soon you can also order from:
+              </p>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => alert("Online orders via Swiggy coming soon for Lee Vaakki Dhaba!")}
+                  style={{
+                    flex: 1,
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    background: "#f5f5f5",
+                    color: "#999",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    border: "1px solid #e0e0e0",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px"
+                  }}
+                >
+                  <span style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    background: "#FC8019",
+                    opacity: 0.6
+                  }} />
+                  Swiggy (Coming Soon)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => alert("Online orders via Zomato coming soon for Lee Vaakki Dhaba!")}
+                  style={{
+                    flex: 1,
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    background: "#f5f5f5",
+                    color: "#999",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    border: "1px solid #e0e0e0",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px"
+                  }}
+                >
+                  <span style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    background: "#CB202D",
+                    opacity: 0.6
+                  }} />
+                  Zomato (Coming Soon)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Categories */}
       <section className="categories-section">
         <h2>What's on your mind?</h2>
