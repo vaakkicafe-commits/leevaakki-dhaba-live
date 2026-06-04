@@ -444,7 +444,7 @@ const SNACK_ITEMS = [
     tag: "Bestseller",
     category: "Crisp",
     rating: "4.9(12k)",
-    image_url: "/snacks/dal_crisp.jpg",
+    image_url: "/snacks/dal_crisp.png",
   },
   {
     id: "snack_chana_dal",
@@ -457,7 +457,7 @@ const SNACK_ITEMS = [
     tag: "Spicy",
     category: "Dal",
     rating: "4.8(9k)",
-    image_url: "/snacks/chana_dal.jpg",
+    image_url: "/snacks/chana_dal.png",
   },
   {
     id: "snack_cheese_balls",
@@ -470,7 +470,7 @@ const SNACK_ITEMS = [
     tag: "Kids Favorite",
     category: "Chips",
     rating: "4.7(15k)",
-    image_url: "/snacks/cheese_balls.jpg",
+    image_url: "/snacks/cheese_balls.png",
   },
   {
     id: "snack_moong_dal",
@@ -483,7 +483,7 @@ const SNACK_ITEMS = [
     tag: "Crunchy",
     category: "Dal",
     rating: "4.9(8k)",
-    image_url: "/snacks/moong_dal.jpg",
+    image_url: "/snacks/moong_dal.png",
   },
   {
     id: "snack_salted_peanuts",
@@ -496,7 +496,7 @@ const SNACK_ITEMS = [
     tag: "Classic",
     category: "Peanuts",
     rating: "4.8(20k)",
-    image_url: "/snacks/salted_peanuts.jpg",
+    image_url: "/snacks/salted_peanuts.png",
   },
   {
     id: "snack_mixture_farsan",
@@ -509,7 +509,7 @@ const SNACK_ITEMS = [
     tag: "Tea Time",
     category: "Mixture",
     rating: "4.6(11k)",
-    image_url: "/snacks/mixture_farsan.jpg",
+    image_url: "/snacks/mixture_farsan.png",
   },
   {
     id: "snack_green_peanuts",
@@ -522,7 +522,7 @@ const SNACK_ITEMS = [
     tag: "Unique",
     category: "Peanuts",
     rating: "4.7(6k)",
-    image_url: "/snacks/green_peanuts.jpg",
+    image_url: "/snacks/green_peanuts.png",
   },
   {
     id: "snack_corn_flakes",
@@ -535,7 +535,7 @@ const SNACK_ITEMS = [
     tag: "Sweet & Salty",
     category: "Mixture",
     rating: "4.8(5k)",
-    image_url: "/snacks/corn_flakes_chivda.jpg",
+    image_url: "/snacks/corn_flakes_chivda.png",
   },
   {
     id: "snack_potato_chips",
@@ -548,7 +548,7 @@ const SNACK_ITEMS = [
     tag: "Bestseller",
     category: "Chips",
     rating: "4.9(25k)",
-    image_url: "/snacks/potato_chips.jpg",
+    image_url: "/snacks/potato_chips.png",
   },
   {
     id: "snack_roasted_almonds",
@@ -561,7 +561,7 @@ const SNACK_ITEMS = [
     tag: "Premium",
     category: "Nuts",
     rating: "4.9(4k)",
-    image_url: "/snacks/roasted_almonds.jpg",
+    image_url: "/snacks/roasted_almonds.png",
   }
 ];
 
@@ -581,7 +581,7 @@ const SnacksPage = () => {
   });
 
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1rem 0.5rem", minHeight: "80vh", paddingBottom: "100px", background: "#f8f9fa" }}>
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1rem 1rem", minHeight: "80vh", paddingBottom: "100px", background: "#f8f9fa" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 0.5rem", marginBottom: "1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <ChevronRight size={24} style={{ transform: "rotate(180deg)", cursor: "pointer" }} onClick={() => navigate(-1)} />
@@ -616,11 +616,11 @@ const SnacksPage = () => {
         <div style={{ display: "flex", overflowX: "auto", gap: "1rem", padding: "0 1rem 0.5rem", scrollbarWidth: "none", msOverflowStyle: "none" }} className="hide-scrollbar">
           {[
             { name: "Popular", image: null },
-            { name: "Dal", image: "/snacks/chana_dal.jpg" },
-            { name: "Chips", image: "/snacks/potato_chips.jpg" },
-            { name: "Peanuts", image: "/snacks/salted_peanuts.jpg" },
-            { name: "Mixture", image: "/snacks/mixture_farsan.jpg" },
-            { name: "Crisp", image: "/snacks/dal_crisp.jpg" }
+            { name: "Dal", image: "/snacks/chana_dal.png" },
+            { name: "Chips", image: "/snacks/potato_chips.png" },
+            { name: "Peanuts", image: "/snacks/salted_peanuts.png" },
+            { name: "Mixture", image: "/snacks/mixture_farsan.png" },
+            { name: "Crisp", image: "/snacks/dal_crisp.png" }
           ].map((cat, idx) => {
             const isActive = selectedCategory === cat.name;
             return (
@@ -640,7 +640,7 @@ const SnacksPage = () => {
           <p>No snacks found.</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "1.5rem" }}>
           {filteredSnacks.map((item) => {
           const cartItem = items.find(i => i.menu_item.id === item.id);
           const quantity = cartItem?.quantity || 0;
