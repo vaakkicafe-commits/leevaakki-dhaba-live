@@ -9,3 +9,36 @@ frontend/build
 .vscode
 *.log
 build
+backend/.venv
+backend/__pycache__
+.venv
+__pycache__
+*.pyc
+.emergent
+
+# Ignore legacy Flutter files
+lib/
+android/
+test/
+wrapper/
+pubspec.yaml
+pubspec.lock
+analysis_options.yaml
+deploy.sh
+setup-both-deployments.sh
+deploy-github-pages.sh
+COMPLETE_SETUP_GUIDE.md
+DEPLOYMENT_INSTRUCTIONS.txt
+DEPLOYMENT_READY.md
+DEPLOY_GUIDE.md
+GITHUB_PAGES_DEPLOY.md
+QUICK_REFERENCE.md
+SETUP_SUMMARY.txt
+
+# Ignore Python tests and documentation
+tests/
+test_reports/
+backend_test.py
+test_result.md
+scratch/
+.metadata

@@ -5,9 +5,15 @@ import { BrowserRouter, Routes, Route, useNavigate, useLocation, Link } from "re
 import axios from "axios";
 import { ShoppingCart, User, MapPin, Clock, Phone, ChevronRight, Plus, Minus, Trash2, X, Check, Search, Star, Flame, Leaf, Menu as MenuIcon, Home, Package, LogOut, Settings, Utensils, ChefHat, Croissant, Gift, Coffee, IceCream2, Download, Smartphone } from "lucide-react";
 import AdminDashboard from "@/components/AdminDashboard";
+import { auth, googleProvider } from "@/firebase";
+import { signInWithPopup } from "firebase/auth";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
+
+// ─── Online Ordering Context ───────────────────────────────────────────────
+const OnlineOrderingContext = createContext({ onlineOrderingOpen: true, setOnlineOrderingOpen: () => {} });
+export const useOnlineOrdering = () => useContext(OnlineOrderingContext);
 
 const FALLBACK_MENU_ITEMS = [
   { id: "starter_1", name: "Paneer Tikka", description: "Marinated cottage cheese cubes grilled to perfection in tandoor", price: 320, category: "Starters", image_url: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?q=80&w=800", is_veg: true, is_bestseller: true, is_available: true, tags: ["Bestseller", "Tandoor"], customizations: [] },
@@ -134,8 +140,32 @@ const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      // Use Firebase signInWithPopup — works from any authorized domain
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseIdToken = await result.user.getIdToken();
+
+      // The backend accepts Firebase ID tokens directly as Bearer tokens,
+      // so we don't need to exchange it for a JWT.
+      const newToken = firebaseIdToken;
+      localStorage.setItem("token", newToken);
+      setToken(newToken);
+
+      const meRes = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${newToken}` } });
+      setUser(meRes.data);
+      return meRes.data;
+    } catch (err) {
+      console.error("loginWithGoogle Error:", err);
+      if (err.response) {
+        throw new Error(`Backend Error: ${err.response.status} - ${JSON.stringify(err.response.data)}`);
+      }
+      throw err;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, loginWithGoogle, loading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -186,14 +216,90 @@ const CartProvider = ({ children }) => {
   );
 };
 
+// ─── Admin Drawer (Dhaba Online Ordering Toggle) ──────────────────────────
+const AdminDrawer = ({ onClose, token }) => {
+  const { onlineOrderingOpen, setOnlineOrderingOpen } = useOnlineOrdering();
+  const [saving, setSaving] = useState(false);
+
+  const toggle = async (val) => {
+    setSaving(true);
+    try {
+      const res = await axios.post(
+        `${API}/admin/online-ordering`,
+        { open: val, brand: "dhaba" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setOnlineOrderingOpen(res.data.onlineOrderingOpen);
+    } catch (e) {
+      alert("Failed to update: " + (e.response?.data?.detail || e.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, right: 0, bottom: 0, width: "320px",
+      background: "#FFFDF9", boxShadow: "-4px 0 24px rgba(0,0,0,0.15)",
+      zIndex: 3000, display: "flex", flexDirection: "column", borderLeft: "1px solid #f0ebe0"
+    }}>
+      <div style={{ padding: "20px", borderBottom: "1px solid #f0ebe0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ fontSize: "20px" }}>🍛</span>
+          <strong style={{ fontSize: "16px", color: "#1A1A1A" }}>Dhaba Admin</strong>
+        </div>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", borderRadius: "50%" }}>
+          <X size={20} color="#666" />
+        </button>
+      </div>
+
+      <div style={{ padding: "24px", flex: 1 }}>
+        <p style={{ fontSize: "12px", color: "#888", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>Online Ordering</p>
+        <div style={{
+          background: onlineOrderingOpen ? "#E8F5E9" : "#FFEBEE",
+          border: `2px solid ${onlineOrderingOpen ? "#4CAF50" : "#EF5350"}`,
+          borderRadius: "12px", padding: "16px",
+          display: "flex", alignItems: "center", justifyContent: "space-between"
+        }}>
+          <div>
+            <div style={{ fontWeight: 700, color: onlineOrderingOpen ? "#2E7D32" : "#C62828", fontSize: "15px" }}>
+              {onlineOrderingOpen ? "OPEN" : "CLOSED"}
+            </div>
+            <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>Dhaba online orders</div>
+          </div>
+          <button
+            onClick={() => toggle(!onlineOrderingOpen)}
+            disabled={saving}
+            style={{
+              background: onlineOrderingOpen ? "#4CAF50" : "#EF5350",
+              color: "white", border: "none", borderRadius: "20px",
+              padding: "8px 18px", fontWeight: 700, fontSize: "13px",
+              cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1,
+              transition: "all 0.2s"
+            }}
+          >
+            {saving ? "..." : (onlineOrderingOpen ? "Turn OFF" : "Turn ON")}
+          </button>
+        </div>
+        <p style={{ fontSize: "12px", color: "#888", marginTop: "12px", lineHeight: 1.5 }}>
+          When OFF: customers cannot add items or checkout on the Dhaba site.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // Components
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const { itemCount } = useCart();
+  const { onlineOrderingOpen } = useOnlineOrdering();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const navigate = useNavigate();
 
   return (
+    <>
     <nav className="navbar" data-testid="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo" data-testid="logo">
@@ -203,14 +309,45 @@ const Navbar = () => {
 
         <div className="navbar-links">
           <Link to="/menu" className="nav-link" data-testid="menu-link">Menu</Link>
+          <Link to="/snacks" className="nav-link" data-testid="snacks-link">Snacks</Link>
           <Link to="/track" className="nav-link" data-testid="track-link">Track Order</Link>
         </div>
 
         <div className="navbar-actions">
+          {/* Online ordering status badge */}
+          <span style={{
+            fontSize: "11px", fontWeight: 700, letterSpacing: "0.5px",
+            padding: "4px 8px", borderRadius: "12px",
+            background: onlineOrderingOpen ? "#E8F5E9" : "#FFEBEE",
+            color: onlineOrderingOpen ? "#2E7D32" : "#C62828",
+            border: `1px solid ${onlineOrderingOpen ? "#A5D6A7" : "#EF9A9A"}`,
+            whiteSpace: "nowrap"
+          }}>
+            {onlineOrderingOpen ? "🟢 OPEN" : "🔴 CLOSED"}
+          </span>
+
           <button className="cart-btn" onClick={() => navigate("/cart")} data-testid="cart-btn">
             <ShoppingCart size={22} />
             {itemCount > 0 && <span className="cart-badge">{itemCount}</span>}
           </button>
+
+          {/* Admin gear — only for authorized dhaba admins */}
+          {(user?.roles?.dhaba === 'admin' || user?.roles?.dhaba === 'employee') && (
+            <button
+              onClick={() => setAdminOpen(true)}
+              title="Admin Panel"
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                padding: "6px", borderRadius: "50%", color: "#555",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "background 0.2s"
+              }}
+              onMouseOver={e => e.currentTarget.style.background = "#f0f0f0"}
+              onMouseOut={e => e.currentTarget.style.background = "none"}
+            >
+              <Settings size={20} />
+            </button>
+          )}
 
           {user ? (
             <div className="user-menu">
@@ -223,10 +360,10 @@ const Navbar = () => {
                   <Link to="/orders" className="dropdown-item" onClick={() => setMenuOpen(false)}>
                     <Package size={18} /> My Orders
                   </Link>
-                  {user.is_admin && (
-                    <Link to="/admin" className="dropdown-item" onClick={() => setMenuOpen(false)}>
+                  {(user.roles?.dhaba === 'admin' || user.roles?.dhaba === 'employee') && (
+                    <div className="dropdown-item" onClick={() => { setAdminOpen(true); setMenuOpen(false); }} style={{ cursor: "pointer" }}>
                       <Settings size={18} /> Admin Panel
-                    </Link>
+                    </div>
                   )}
                   <button className="dropdown-item logout" onClick={() => { logout(); setMenuOpen(false); }}>
                     <LogOut size={18} /> Logout
@@ -240,6 +377,18 @@ const Navbar = () => {
         </div>
       </div>
     </nav>
+
+    {/* Admin drawer overlay */}
+    {adminOpen && (
+      <>
+        <div onClick={() => setAdminOpen(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
+          zIndex: 2999, backdropFilter: "blur(2px)"
+        }} />
+        <AdminDrawer onClose={() => setAdminOpen(false)} token={token} />
+      </>
+    )}
+    </>
   );
 };
 
@@ -279,6 +428,76 @@ const Footer = () => {
         <p>© 2024 {settings?.restaurant_name || "Lee Vaakki Dhaba"}. All rights reserved.</p>
       </div>
     </footer>
+  );
+};
+
+// --- Snacks Data & Component ---
+const SNACK_ITEMS = [
+  {
+    id: "snack_alu_bhujia",
+    name: "Aloo Bhujia",
+    description: "Crispy potato sev with tangy masala.",
+    price: 60,
+  },
+  {
+    id: "snack_masala_chips",
+    name: "Masala Chips",
+    description: "Classic chips with chatpata masala.",
+    price: 40,
+  },
+  {
+    id: "snack_khatta_meetha",
+    name: "Khatta Meetha Mixture",
+    description: "Sweet and sour traditional Indian snack mixture.",
+    price: 75,
+  },
+  {
+    id: "snack_mathri",
+    name: "Punjabi Mathri",
+    description: "Flaky, savory crackers spiced with ajwain.",
+    price: 50,
+  }
+];
+
+const SnacksPage = () => {
+  const { addItem } = useCart();
+
+  return (
+    <div style={{ maxWidth: "1024px", margin: "0 auto", padding: "2rem 1rem", minHeight: "60vh" }}>
+      <h1 style={{ fontSize: "1.75rem", fontWeight: "700", marginBottom: "0.5rem", color: "#1A1A1A" }}>SNACKS & NAMKEEN</h1>
+      <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "2rem", maxWidth: "700px" }}>
+        Craving something light? Order our crispy snacks, namkeen and evening bites straight from the Dhaba. 
+        Add them on top of your meal order, or get just snacks delivered to you. Add snacks and food in the same cart and pay once!
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "1.25rem" }}>
+        {SNACK_ITEMS.map((item) => (
+          <div
+            key={item.id}
+            style={{ border: "1px solid #e0e0e0", borderRadius: "8px", padding: "1rem", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "#fff" }}
+          >
+            <div>
+              <h2 style={{ fontSize: "1rem", fontWeight: "600", marginBottom: "0.25rem", color: "#1A1A1A" }}>{item.name}</h2>
+              <p style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.75rem" }}>{item.description}</p>
+              <p style={{ fontSize: "1rem", fontWeight: "700", color: "#2E7D32" }}>₹{item.price}</p>
+            </div>
+            <button
+              style={{ marginTop: "1rem", fontSize: "0.85rem", backgroundColor: "#e65100", color: "#fff", padding: "0.5rem 1rem", borderRadius: "4px", border: "none", cursor: "pointer", fontWeight: "600", transition: "background 0.2s" }}
+              onMouseOver={(e) => e.target.style.backgroundColor = "#bf360c"}
+              onMouseOut={(e) => e.target.style.backgroundColor = "#e65100"}
+              onClick={() =>
+                addItem({
+                  ...item,
+                  category: "snacks",
+                }, 1)
+              }
+            >
+              Add to Cart
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
@@ -524,6 +743,7 @@ const HomePage = () => {
 
 const MenuItemCard = ({ item, onImageClick }) => {
   const { addItem, items, updateQuantity } = useCart();
+  const { onlineOrderingOpen } = useOnlineOrdering();
   const cartItem = items.find(i => i.menu_item.id === item.id);
   const quantity = cartItem?.quantity || 0;
 
@@ -535,6 +755,7 @@ const MenuItemCard = ({ item, onImageClick }) => {
   };
 
   const handleAdd = () => {
+    if (!onlineOrderingOpen) return;
     vibrate(50);
     addItem(item, 1);
   };
@@ -564,7 +785,11 @@ const MenuItemCard = ({ item, onImageClick }) => {
         <p className="item-desc">{item.description}</p>
         <div className="item-footer">
           <span className="item-price">₹{item.price}</span>
-          {quantity === 0 ? (
+          {!onlineOrderingOpen ? (
+            <button className="add-btn" disabled style={{ opacity: 0.4, cursor: "not-allowed" }}>
+              Closed
+            </button>
+          ) : quantity === 0 ? (
             <button className="add-btn" onClick={handleAdd} data-testid={`add-${item.id}`}>
               <Plus size={16} /> Add
             </button>
@@ -725,13 +950,152 @@ const MenuPage = () => {
   );
 };
 
+const GoogleLoginModal = ({ isOpen, onClose, onSuccess }) => {
+  const { loginWithGoogle } = useAuth();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleGoogleLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      await loginWithGoogle();
+      onSuccess?.();
+    } catch (err) {
+      if (err.message !== "Closed by user" && err.message !== "Popup blocked" && !err.message.includes("popup-closed-by-user") && !err.message.includes("popup-blocked")) {
+        setError(`Login failed: ${err.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 2000,
+      backdropFilter: "blur(4px)",
+    }}>
+      <div style={{
+        background: "#FFFDF9",
+        borderRadius: "20px",
+        padding: "36px",
+        maxWidth: "420px",
+        width: "90%",
+        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
+        position: "relative",
+        textAlign: "center",
+        border: "1px solid rgba(255, 107, 53, 0.1)"
+      }}>
+        <button 
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: "16px",
+            right: "16px",
+            border: "none",
+            background: "none",
+            cursor: "pointer",
+            color: "#888",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "4px",
+            borderRadius: "50%",
+            transition: "background 0.2s"
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = "#f0f0f0"}
+          onMouseOut={(e) => e.currentTarget.style.background = "none"}
+        >
+          <X size={20} />
+        </button>
+
+        <div style={{ fontSize: "40px", marginBottom: "16px" }}>🍛</div>
+        <h3 style={{ fontSize: "22px", fontWeight: "800", color: "#1A1A1A", marginBottom: "10px" }}>Sign in with Google</h3>
+        <p style={{ fontSize: "14px", color: "#666", lineHeight: "1.5", marginBottom: "24px" }}>
+          To complete your order and pay securely, please sign in with your Google account.
+        </p>
+
+        {error && (
+          <div style={{
+            background: "#FFEBEE",
+            color: "#C62828",
+            padding: "10px 14px",
+            borderRadius: "8px",
+            fontSize: "13px",
+            marginBottom: "16px",
+            textAlign: "left"
+          }}>
+            {error}
+          </div>
+        )}
+
+        <button 
+          type="button" 
+          disabled={loading}
+          onClick={handleGoogleLogin}
+          style={{
+            width: "100%",
+            padding: "14px",
+            border: "1px solid #dadce0",
+            borderRadius: "30px",
+            background: "white",
+            color: "#3c4043",
+            fontSize: "15px",
+            fontWeight: "600",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "12px",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.04)"
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.background = "#f8f9fa"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = "white"; e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.04)"; }}
+        >
+          {loading ? (
+            <span style={{ fontSize: "14px", color: "#666" }}>Connecting...</span>
+          ) : (
+            <>
+              <svg width="18" height="18" viewBox="0 0 18 18">
+                <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.8 2.72v2.24h2.9c1.7-1.57 2.7-3.88 2.7-6.59z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.2l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.34-1.59-5.05-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
+                <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V5H.95C.35 6.2 0 7.57 0 9s.35 2.8 1 4l2.95-2.3z"/>
+                <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.04l2.95 2.3c.71-2.14 2.7-3.76 5.05-3.76z"/>
+              </svg>
+              Continue with Google
+            </>
+          )}
+        </button>
+
+        <div style={{ marginTop: "16px", fontSize: "11px", color: "#999" }}>
+          By continuing, you agree to our Terms and Privacy Policy.
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CartPage = () => {
   const { items, updateQuantity, removeItem, subtotal, clearCart } = useCart();
   const { user } = useAuth();
+  const { onlineOrderingOpen } = useOnlineOrdering();
   const navigate = useNavigate();
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [couponError, setCouponError] = useState("");
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const deliveryFee = 40;
   const tax = subtotal * 0.05;
@@ -749,8 +1113,9 @@ const CartPage = () => {
   };
 
   const proceedToCheckout = () => {
+    if (!onlineOrderingOpen) return;
     if (!user) {
-      navigate("/login?redirect=/checkout");
+      setShowLoginModal(true);
     } else {
       navigate("/checkout");
     }
@@ -810,11 +1175,34 @@ const CartPage = () => {
           <div className="summary-row"><span>Delivery Fee</span><span>₹{deliveryFee}</span></div>
           <div className="summary-row total"><span>Total</span><span>₹{total.toFixed(0)}</span></div>
 
-          <button className="checkout-btn" onClick={proceedToCheckout} data-testid="checkout-btn">
+          {!onlineOrderingOpen && (
+            <div style={{
+              background: "#FFEBEE", color: "#C62828", borderRadius: "8px",
+              padding: "10px 14px", fontSize: "13px", marginBottom: "12px",
+              border: "1px solid #EF9A9A", textAlign: "center", fontWeight: 600
+            }}>
+              🔴 We are closed for online orders right now.
+            </div>
+          )}
+          <button
+            className="checkout-btn"
+            onClick={proceedToCheckout}
+            disabled={!onlineOrderingOpen}
+            data-testid="checkout-btn"
+            style={{ opacity: onlineOrderingOpen ? 1 : 0.5, cursor: onlineOrderingOpen ? "pointer" : "not-allowed" }}
+          >
             Proceed to Checkout
           </button>
         </div>
       </div>
+      <GoogleLoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)} 
+        onSuccess={() => {
+          setShowLoginModal(false);
+          navigate("/checkout");
+        }} 
+      />
     </div>
   );
 };
@@ -824,7 +1212,7 @@ const LoginPage = () => {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const { login, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -869,6 +1257,55 @@ const LoginPage = () => {
           </button>
         </form>
 
+        <div className="auth-separator" style={{ display: "flex", alignItems: "center", margin: "20px 0", color: "#888", fontSize: "14px" }}>
+          <div style={{ flex: 1, height: "1px", background: "#eee" }}></div>
+          <span style={{ padding: "0 10px" }}>OR</span>
+          <div style={{ flex: 1, height: "1px", background: "#eee" }}></div>
+        </div>
+
+        <button 
+          type="button" 
+          onClick={async () => {
+            setError("");
+            try {
+              await loginWithGoogle();
+              navigate(redirect);
+            } catch (err) {
+              if (err.message !== "Closed by user" && err.message !== "Popup blocked" && !err.message.includes("popup-closed-by-user") && !err.message.includes("popup-blocked")) {
+                setError(`Login failed: ${err.message}`);
+              }
+            }
+          }}
+          style={{
+            width: "100%",
+            padding: "12px",
+            border: "1px solid #dadce0",
+            borderRadius: "8px",
+            background: "white",
+            color: "#3c4043",
+            fontSize: "14px",
+            fontWeight: "500",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+            outline: "none"
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.background = "#f8f9fa"; e.currentTarget.style.borderColor = "#d2d4d7"; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#dadce0"; }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18">
+            <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.8 2.72v2.24h2.9c1.7-1.57 2.7-3.88 2.7-6.59z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.2l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.34-1.59-5.05-3.73H.95v2.3C2.43 15.89 5.5 18 9 18z"/>
+            <path fill="#FBBC05" d="M3.95 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V5H.95C.35 6.2 0 7.57 0 9s.35 2.8 1 4l2.95-2.3z"/>
+            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.4C13.46.97 11.43 0 9 0 5.5 0 2.43 2.11.95 5.04l2.95 2.3c.71-2.14 2.7-3.76 5.05-3.76z"/>
+          </svg>
+          Sign in with Google
+        </button>
+
         <p className="auth-switch">
           {isLogin ? "Don't have an account?" : "Already have an account?"}
           <button onClick={() => setIsLogin(!isLogin)}>{isLogin ? "Register" : "Login"}</button>
@@ -881,9 +1318,10 @@ const LoginPage = () => {
 const CheckoutPage = () => {
   const { items, subtotal, clearCart } = useCart();
   const { user, token } = useAuth();
+  const { onlineOrderingOpen } = useOnlineOrdering();
   const navigate = useNavigate();
   const [orderType, setOrderType] = useState("delivery");
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [paymentMethod, setPaymentMethod] = useState("razorpay");
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [showAddAddress, setShowAddAddress] = useState(false);
@@ -910,7 +1348,21 @@ const CheckoutPage = () => {
     setNewAddress({ label: "Home", address_line: "", landmark: "", city: "", pincode: "" });
   };
 
+  const loadRazorpayScript = () => new Promise(resolve => {
+    if (document.getElementById("razorpay-checkout-js")) return resolve(true);
+    const s = document.createElement("script");
+    s.id = "razorpay-checkout-js";
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+
   const placeOrder = async () => {
+    if (!onlineOrderingOpen) {
+      alert("Online ordering is currently closed. Please try again later.");
+      return;
+    }
     if (orderType === "delivery" && !selectedAddress) {
       alert("Please select a delivery address");
       return;
@@ -923,15 +1375,66 @@ const CheckoutPage = () => {
         address_id: orderType === "delivery" ? selectedAddress : null,
         payment_method: paymentMethod,
         coupon_code: couponCode || null,
-        customer_phone: user?.phone
+        customer_phone: user?.phone,
+        brand: "dhaba"
       };
       const res = await axios.post(`${API}/orders`, orderData, { headers: { Authorization: `Bearer ${token}` } });
-      
-      // If UPI payment selected, get UPI URL and open
+
+      if (paymentMethod === "razorpay") {
+        // Create Razorpay order on backend
+        const rzpRes = await axios.post(
+          `${API}/payments/razorpay/create?order_id=${res.data.id}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const loaded = await loadRazorpayScript();
+        if (!loaded) throw new Error("Razorpay SDK failed to load");
+
+        const options = {
+          key: rzpRes.data.key_id,
+          amount: rzpRes.data.amount,
+          currency: rzpRes.data.currency || "INR",
+          name: "Lee Vaakki Dhaba",
+          description: `Order #${res.data.order_number}`,
+          image: "https://leevaakkicafe.com/favicon.ico",
+          order_id: rzpRes.data.razorpay_order_id,
+          handler: async (response) => {
+            // Verify payment on backend
+            try {
+              await axios.post(
+                `${API}/payments/razorpay/verify`,
+                {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  order_id: res.data.id
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+            } catch (e) {
+              console.error("Payment verification error", e);
+            }
+            clearCart();
+            navigate(`/order-success/${res.data.order_number}`);
+          },
+          prefill: { name: user?.name || "", email: user?.email || "", contact: user?.phone || "" },
+          theme: { color: "#FF6B35" },
+          modal: {
+            ondismiss: () => {
+              setLoading(false);
+              alert("Payment cancelled. Your order has been placed — please complete payment.");
+            }
+          }
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+        setLoading(false);
+        return;
+      }
+
       if (paymentMethod === "upi") {
         try {
           const upiRes = await axios.post(`${API}/payments/upi/create?order_id=${res.data.id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
-          // Try to open UPI intent
           const upiLink = document.createElement('a');
           upiLink.href = upiRes.data.upi_url;
           upiLink.click();
@@ -939,7 +1442,7 @@ const CheckoutPage = () => {
           console.log("UPI redirect failed, proceeding to success page");
         }
       }
-      
+
       clearCart();
       navigate(`/order-success/${res.data.order_number}`);
     } catch (err) {
@@ -1011,18 +1514,18 @@ const CheckoutPage = () => {
           <section className="checkout-section">
             <h3>Payment Method</h3>
             <div className="payment-options">
+              <label className={paymentMethod === "razorpay" ? "selected" : ""}>
+                <input type="radio" name="payment" value="razorpay" checked={paymentMethod === "razorpay"} onChange={e => setPaymentMethod(e.target.value)} />
+                💳 Pay Online (Card / UPI / Netbanking)
+              </label>
               <label className={paymentMethod === "cod" ? "selected" : ""}>
                 <input type="radio" name="payment" value="cod" checked={paymentMethod === "cod"} onChange={e => setPaymentMethod(e.target.value)} />
                 💵 Cash on Delivery
               </label>
-              <label className={paymentMethod === "upi" ? "selected" : ""}>
-                <input type="radio" name="payment" value="upi" checked={paymentMethod === "upi"} onChange={e => setPaymentMethod(e.target.value)} />
-                📱 Pay via UPI
-              </label>
             </div>
-            {paymentMethod === "upi" && (
+            {paymentMethod === "razorpay" && (
               <div className="upi-info">
-                <p>💡 After placing order, you'll be redirected to your UPI app to complete payment</p>
+                <p>💡 Secure payment powered by Razorpay — Card, UPI, Netbanking all supported</p>
               </div>
             )}
           </section>
@@ -1045,8 +1548,23 @@ const CheckoutPage = () => {
             {orderType === "delivery" && <div className="summary-row"><span>Delivery</span><span>₹{deliveryFee}</span></div>}
             <div className="summary-row total"><span>Total</span><span>₹{total.toFixed(0)}</span></div>
           </div>
-          <button className="place-order-btn" onClick={placeOrder} disabled={loading} data-testid="place-order-btn">
-            {loading ? "Placing Order..." : `Place Order • ₹${total.toFixed(0)}`}
+          {!onlineOrderingOpen && (
+            <div style={{
+              background: "#FFEBEE", color: "#C62828", borderRadius: "8px",
+              padding: "10px 14px", fontSize: "13px", marginBottom: "12px",
+              border: "1px solid #EF9A9A", textAlign: "center", fontWeight: 600
+            }}>
+              🔴 We are closed for online orders right now.
+            </div>
+          )}
+          <button
+            className="place-order-btn"
+            onClick={placeOrder}
+            disabled={loading || !onlineOrderingOpen}
+            data-testid="place-order-btn"
+            style={{ opacity: (loading || !onlineOrderingOpen) ? 0.5 : 1 }}
+          >
+            {loading ? "Processing..." : `Place Order • ₹${total.toFixed(0)}`}
           </button>
         </div>
       </div>
@@ -1292,31 +1810,42 @@ const AdminPage = () => {
 };
 
 function App() {
+  const [onlineOrderingOpen, setOnlineOrderingOpen] = useState(true);
+
+  useEffect(() => {
+    axios.get(`${API}/config/online-ordering?brand=dhaba`)
+      .then(res => setOnlineOrderingOpen(res.data.onlineOrderingOpen))
+      .catch(() => {});
+  }, []);
+
   return (
-    <AuthProvider>
-      <CartProvider>
-        <BrowserRouter>
-          <div className="App">
-            <InstallPrompt />
-            <Navbar />
-            <main className="main-content">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/menu" element={<MenuPage />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/order-success/:order_number" element={<OrderSuccessPage />} />
-                <Route path="/track" element={<TrackOrderPage />} />
-                <Route path="/orders" element={<MyOrdersPage />} />
-                <Route path="/admin" element={<AdminPage />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        </BrowserRouter>
-      </CartProvider>
-    </AuthProvider>
+    <OnlineOrderingContext.Provider value={{ onlineOrderingOpen, setOnlineOrderingOpen }}>
+      <AuthProvider>
+        <CartProvider>
+          <BrowserRouter>
+            <div className="App">
+              <InstallPrompt />
+              <Navbar />
+              <main className="main-content">
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/menu" element={<MenuPage />} />
+                  <Route path="/snacks" element={<SnacksPage />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/order-success/:order_number" element={<OrderSuccessPage />} />
+                  <Route path="/track" element={<TrackOrderPage />} />
+                  <Route path="/orders" element={<MyOrdersPage />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          </BrowserRouter>
+        </CartProvider>
+      </AuthProvider>
+    </OnlineOrderingContext.Provider>
   );
 }
 

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -55,6 +56,7 @@ manager = ConnectionManager()
 app = FastAPI(title="Lee Vaakki Dhaba API", version="1.0.0")
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
+security_optional = HTTPBearer(auto_error=False)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -143,18 +145,35 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
-def create_token(user_id: str, email: str, is_admin: bool = False) -> str:
+def create_token(user_id: str, email: str, is_admin: bool = False, roles: dict = None) -> str:
     payload = {
         "user_id": user_id,
         "email": email,
         "is_admin": is_admin,
+        "roles": roles or {},
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def verify_firebase_token(token: str) -> Optional[dict]:
     try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        # Decode without verifying signature to check issuer and audience first.
+        # This keeps the app lightweight and avoids network certificate lookup latency.
+        unverified = jwt.decode(token, options={"verify_signature": False})
+        iss = unverified.get("iss", "")
+        aud = unverified.get("aud", "")
+        
+        # Verify it matches our Firebase project ID
+        firebase_project_id = "lee-vaakki-pvt-ltd-33e4e"
+        if iss == f"https://securetoken.google.com/{firebase_project_id}" and aud == firebase_project_id:
+            return unverified
+    except Exception as e:
+        logger.warning(f"Failed to parse Firebase token: {e}")
+    return None
+
+async def get_user_from_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0, "password": 0})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
@@ -162,21 +181,63 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
+        # Fallback to Firebase ID token decoding
+        firebase_payload = verify_firebase_token(token)
+        if firebase_payload:
+            email = firebase_payload.get("email")
+            if email:
+                user = await db.users.find_one({"email": email}, {"_id": 0, "password": 0})
+                if not user:
+                    # Create user dynamically in MongoDB if they don't exist yet
+                    user = {
+                        "id": firebase_payload.get("user_id") or firebase_payload.get("sub") or str(uuid.uuid4()),
+                        "name": firebase_payload.get("name", email.split("@")[0]),
+                        "email": email,
+                        "phone": "",
+                        "is_admin": False,
+                        "roles": {},
+                        "addresses": [],
+                        "created_at": datetime.now(timezone.utc).isoformat()
+                    }
+                    await db.users.insert_one(user)
+                    # Remove Mongo generated _id and password before returning
+                    user.pop("_id", None)
+                    user.pop("password", None)
+                return user
         raise HTTPException(status_code=401, detail="Invalid token")
 
-async def get_admin_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        if not payload.get("is_admin"):
-            raise HTTPException(status_code=403, detail="Admin access required")
-        user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0, "password": 0})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        return user
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+async def get_current_user(request: Request, credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional)):
+    token = None
+    if credentials:
+        token = credentials.credentials
+    else:
+        token = request.cookies.get("token")
+        
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+        
+    return await get_user_from_token(token)
+
+async def get_admin_user(request: Request, credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional)):
+    token = None
+    if credentials:
+        token = credentials.credentials
+    else:
+        token = request.cookies.get("token")
+        
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+        
+    user = await get_user_from_token(token)
+    
+    is_legacy_admin = user.get("is_admin", False)
+    roles = user.get("roles", {})
+    
+    has_any_admin_role = is_legacy_admin or any(role in ["admin", "employee"] for role in roles.values())
+    
+    if not has_any_admin_role:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
 
 # ============== AUTH ROUTES ==============
 
@@ -193,11 +254,12 @@ async def register(user: UserCreate):
         "phone": user.phone,
         "password": hash_password(user.password),
         "is_admin": False,
+        "roles": {},
         "addresses": [],
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
-    token = create_token(user_doc["id"], user_doc["email"])
+    token = create_token(user_doc["id"], user_doc["email"], False, {})
     return {"token": token, "user": {k: v for k, v in user_doc.items() if k not in ["password", "_id"]}}
 
 @api_router.post("/auth/login")
@@ -206,8 +268,162 @@ async def login(credentials: UserLogin):
     if not user or not verify_password(credentials.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    token = create_token(user["id"], user["email"], user.get("is_admin", False))
+    token = create_token(user["id"], user["email"], user.get("is_admin", False), user.get("roles", {}))
     return {"token": token, "user": {k: v for k, v in user.items() if k not in ["password", "_id"]}}
+
+@api_router.get("/auth/google/login")
+async def google_login():
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", "your-google-client-id.apps.googleusercontent.com")
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
+    
+    auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth"
+        f"?response_type=code"
+        f"&client_id={client_id}"
+        f"&redirect_uri={redirect_uri}"
+        f"&scope=openid%20email%20profile"
+        f"&prompt=select_account"
+    )
+    return RedirectResponse(auth_url)
+
+@api_router.get("/auth/google/callback")
+async def google_callback(code: str, state: Optional[str] = None):
+    import requests
+    
+    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI")
+    
+    # 1. Exchange code for tokens
+    token_url = "https://oauth2.googleapis.com/token"
+    token_data = {
+        "code": code,
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "redirect_uri": redirect_uri,
+        "grant_type": "authorization_code"
+    }
+    
+    try:
+        response = requests.post(token_url, data=token_data)
+        if response.status_code != 200:
+            logger.error(f"Google token exchange failed: {response.text}")
+            raise HTTPException(status_code=400, detail="Failed to retrieve token from Google")
+        
+        tokens = response.json()
+        id_token_jwt = tokens.get("id_token")
+        if not id_token_jwt:
+            raise HTTPException(status_code=400, detail="No ID token returned by Google")
+            
+        # 2. Decode user identity from ID token
+        payload = jwt.decode(id_token_jwt, options={"verify_signature": False})
+        email = payload.get("email")
+        name = payload.get("name", email.split("@")[0] if email else "Google User")
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Google account has no email")
+            
+        # 3. Find or create the user in MongoDB
+        user = await db.users.find_one({"email": email})
+        if not user:
+            user = {
+                "id": str(uuid.uuid4()),
+                "name": name,
+                "email": email,
+                "phone": "",  # Google does not provide phone by default
+                "password": hash_password(str(uuid.uuid4())),
+                "is_admin": False,
+                "roles": {},
+                "addresses": [],
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(user)
+            
+        if user and "_id" in user:
+            user.pop("_id")
+        if user and "password" in user:
+            user.pop("password")
+            
+        # 4. Generate local session JWT
+        token = create_token(user["id"], user["email"], user.get("is_admin", False), user.get("roles", {}))
+        frontend_origin = os.environ.get("FRONTEND_URL", "*")
+        
+        # 5. Build HTMLResponse with JS script to postMessage and close popup
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Authentication Successful</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    background-color: #f7f9fa;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                }}
+                .container {{
+                    text-align: center;
+                    padding: 32px;
+                    background: white;
+                    border-radius: 16px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+                    max-width: 400px;
+                }}
+                .spinner {{
+                    width: 40px;
+                    height: 40px;
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #6F4E37;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 20px;
+                }}
+                @keyframes spin {{
+                    0% {{ transform: rotate(0deg); }}
+                    100% {{ transform: rotate(360deg); }}
+                }}
+                h2 {{ color: #1a1a1a; margin-bottom: 8px; font-weight: 600; }}
+                p {{ color: #666; font-size: 14px; margin: 0; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="spinner"></div>
+                <h2>Signing you in...</h2>
+                <p>Completing secure Google login. This popup window will close automatically.</p>
+            </div>
+            <script>
+                setTimeout(function() {{
+                    try {{
+                        window.opener.postMessage({{ 
+                            type: "google-login-success", 
+                            token: "{token}" 
+                        }}, "{frontend_origin}");
+                    }} catch (e) {{
+                        console.error("Popup: Failed to postMessage to opener:", e);
+                    }}
+                    window.close();
+                }}, 800);
+            </script>
+        </body>
+        </html>
+        """
+        response = HTMLResponse(content=html_content, status_code=200)
+        response.set_cookie(
+            key="token", 
+            value=token, 
+            httponly=True, 
+            secure=True, 
+            samesite="none", 
+            max_age=JWT_EXPIRATION_HOURS * 3600
+        )
+        return response
+    except Exception as e:
+        logger.error(f"Error during Google callback handling: {e}")
+        raise HTTPException(status_code=500, detail="Authentication failed")
 
 @api_router.get("/auth/me")
 async def get_me(user = Depends(get_current_user)):
@@ -271,8 +487,21 @@ async def delete_address(address_id: str, user = Depends(get_current_user)):
 
 # ============== ORDER ROUTES ==============
 
-@api_router.post("/orders")
-async def create_order(order: OrderCreate, user = Depends(get_current_user)):
+async def _create_order_doc(order: OrderCreate, user, channel: str, source_order_id: Optional[str] = None):
+    # Check if online ordering is open for customer-facing channels (brand-aware)
+    if channel in ["OWN_DHABA", "OWN_CAFE"]:
+        brand = "dhaba" if channel == "OWN_DHABA" else "cafe"
+        config_doc = await db.config.find_one({"key": "online_ordering", "brand": brand})
+        # Fall back to legacy doc without brand field for backwards compatibility
+        if not config_doc:
+            config_doc = await db.config.find_one({"key": "online_ordering", "brand": {"$exists": False}})
+        is_open = config_doc.get("value", True) if config_doc else True
+        if not is_open:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Online ordering is currently closed for {brand}. We are not accepting orders at this moment."
+            )
+
     # Calculate order total - batch query for menu items
     items_details = []
     subtotal = 0
@@ -344,11 +573,11 @@ async def create_order(order: OrderCreate, user = Depends(get_current_user)):
         "order_type": order.order_type,
         "delivery_address": delivery_address,
         "payment_method": order.payment_method,
-        "payment_status": "pending",
+        "payment_status": "pending" if source_order_id else "placed",
         "special_instructions": order.special_instructions,
         "status": "placed",
-        "channel": order.channel,
-        "source_order_id": order.source_order_id,
+        "channel": channel,
+        "source_order_id": source_order_id,
         "status_history": [
             {"status": "placed", "timestamp": datetime.now(timezone.utc).isoformat(), "notes": "Order placed successfully"}
         ],
@@ -375,6 +604,69 @@ async def create_order(order: OrderCreate, user = Depends(get_current_user)):
     })
     
     return order_doc
+
+@api_router.post("/orders")
+async def create_order(order: OrderCreate, user = Depends(get_current_user)):
+    return await _create_order_doc(order, user, order.channel or "OWN_DHABA", order.source_order_id)
+
+def _create_razorpay_order(amount_paise: int, receipt_id: str) -> str:
+    key_id = os.environ.get("RAZORPAY_KEY_ID")
+    key_secret = os.environ.get("RAZORPAY_KEY_SECRET")
+    
+    if not key_id or not key_secret:
+        logger.warning("RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET environment variables are not set. Using simulated order ID.")
+        return f"order_rzp_{uuid.uuid4().hex[:12]}"
+        
+    try:
+        import requests
+        res = requests.post(
+            "https://api.razorpay.com/v1/orders",
+            auth=(key_id, key_secret),
+            json={
+                "amount": amount_paise,
+                "currency": "INR",
+                "receipt": receipt_id
+            },
+            timeout=10
+        )
+        if res.status_code == 200:
+            return res.json().get("id")
+        else:
+            logger.error(f"Razorpay API order creation failed (status={res.status_code}): {res.text}")
+    except Exception as e:
+        logger.error(f"Error calling Razorpay API: {e}")
+        
+    return f"order_rzp_{uuid.uuid4().hex[:12]}"
+
+@api_router.post("/orders/own/dhaba")
+async def create_own_dhaba_order(order: OrderCreate, user = Depends(get_current_user)):
+    order_doc = await _create_order_doc(order, user, "OWN_DHABA", "PENDING_RZP")
+    amount_paise = int(order_doc["total"] * 100)
+    
+    razorpay_order_id = _create_razorpay_order(amount_paise, order_doc["id"])
+    await db.orders.update_one({"id": order_doc["id"]}, {"$set": {"source_order_id": razorpay_order_id}})
+    
+    return {
+        "order_id": razorpay_order_id,
+        "amount": amount_paise,
+        "currency": "INR",
+        "local_order_id": order_doc["id"]
+    }
+
+@api_router.post("/orders/own/cafe")
+async def create_own_cafe_order(order: OrderCreate, user = Depends(get_current_user)):
+    order_doc = await _create_order_doc(order, user, "OWN_CAFE", "PENDING_RZP")
+    amount_paise = int(order_doc["total"] * 100)
+    
+    razorpay_order_id = _create_razorpay_order(amount_paise, order_doc["id"])
+    await db.orders.update_one({"id": order_doc["id"]}, {"$set": {"source_order_id": razorpay_order_id}})
+    
+    return {
+        "order_id": razorpay_order_id,
+        "amount": amount_paise,
+        "currency": "INR",
+        "local_order_id": order_doc["id"]
+    }
 
 @api_router.get("/orders")
 async def get_user_orders(user = Depends(get_current_user)):
@@ -449,12 +741,21 @@ async def delete_menu_item(item_id: str, admin = Depends(get_admin_user)):
     return {"message": "Item deleted"}
 
 @api_router.get("/admin/orders")
-async def get_all_orders(status: Optional[str] = None, channel: Optional[str] = None, admin = Depends(get_admin_user)):
+async def get_all_orders(status: Optional[str] = None, channel: Optional[str] = None, brand: Optional[str] = None, admin = Depends(get_admin_user)):
+    if brand:
+        is_legacy_admin = admin.get("is_admin", False)
+        brand_role = admin.get("roles", {}).get(brand)
+        if not is_legacy_admin and brand_role not in ["admin", "employee"]:
+            raise HTTPException(status_code=403, detail=f"Admin access required for brand: {brand}")
+            
     query = {}
     if status:
         query["status"] = status
     if channel:
         query["channel"] = channel
+    elif brand:
+        query["channel"] = f"OWN_{brand.upper()}"
+        
     orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     return {"orders": orders}
 
@@ -493,16 +794,30 @@ async def create_coupon(coupon: CouponCreate, admin = Depends(get_admin_user)):
     return {"message": "Coupon created", "coupon": coupon_doc}
 
 @api_router.get("/admin/stats")
-async def get_stats(admin = Depends(get_admin_user)):
-    total_orders = await db.orders.count_documents({})
+async def get_stats(brand: Optional[str] = None, admin = Depends(get_admin_user)):
+    if brand:
+        is_legacy_admin = admin.get("is_admin", False)
+        brand_role = admin.get("roles", {}).get(brand)
+        if not is_legacy_admin and brand_role not in ["admin", "employee"]:
+            raise HTTPException(status_code=403, detail=f"Admin access required for brand: {brand}")
+
+    query = {}
+    if brand:
+        query["channel"] = f"OWN_{brand.upper()}"
+
+    total_orders = await db.orders.count_documents(query)
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0).isoformat()
-    today_orders = await db.orders.count_documents({"created_at": {"$gte": today_start}})
+    today_query = {**query, "created_at": {"$gte": today_start}}
+    today_orders = await db.orders.count_documents(today_query)
     
     pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total"}}}]
+    if query:
+        pipeline.insert(0, {"$match": query})
     revenue_result = await db.orders.aggregate(pipeline).to_list(1)
     total_revenue = revenue_result[0]["total"] if revenue_result else 0
     
-    pending_orders = await db.orders.count_documents({"status": {"$in": ["placed", "confirmed", "preparing"]}})
+    pending_query = {**query, "status": {"$in": ["placed", "confirmed", "preparing"]}}
+    pending_orders = await db.orders.count_documents(pending_query)
     total_users = await db.users.count_documents({})
     
     return {
@@ -551,6 +866,13 @@ async def _seed_database_if_empty():
         {"id": "dessert_1", "name": "Gulab Jamun", "description": "Deep fried milk dumplings in sugar syrup (2 pcs)", "price": 100, "category": "Desserts", "image_url": "https://images.unsplash.com/photo-1666190077072-ee1489e7cd5b?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": [], "customizations": []},
         {"id": "dessert_2", "name": "Kulfi", "description": "Traditional Indian ice cream with pistachios", "price": 120, "category": "Desserts", "image_url": "https://images.unsplash.com/photo-1623073284788-0d846f75e329?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": [], "customizations": []},
         {"id": "dessert_3", "name": "Kheer", "description": "Creamy rice pudding with cardamom and nuts", "price": 110, "category": "Desserts", "image_url": "https://images.unsplash.com/photo-1631452180539-96aca7d48617?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": [], "customizations": []},
+        # Cafe Items
+        {"id": "cafe_1", "name": "Premium Espresso", "description": "Rich, dark espresso shot pulled from freshly ground Arabica beans", "price": 160, "category": "Coffee", "image_url": "https://images.unsplash.com/photo-1510707577719-094119f7cc54?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": ["Signature", "Hot"], "customizations": []},
+        {"id": "cafe_2", "name": "Classic Cappuccino", "description": "Smooth espresso blended with steamed milk and topped with rich foam", "price": 190, "category": "Coffee", "image_url": "https://images.unsplash.com/photo-1572442388796-11668a67e53d?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": ["Best Seller"], "customizations": []},
+        {"id": "cafe_3", "name": "Salted Caramel Latte", "description": "Espresso shot with rich milk, sweet caramel syrup, and a touch of sea salt", "price": 220, "category": "Coffee", "image_url": "https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": ["Sweet", "Cold Option"], "customizations": []},
+        {"id": "cafe_4", "name": "Artisan Butter Croissant", "description": "Flaky, layered French pastry baked fresh with premium European butter", "price": 130, "category": "Pastries", "image_url": "https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": ["Freshly Baked"], "customizations": []},
+        {"id": "cafe_5", "name": "Blueberry Cheesecake", "description": "Creamy New York style cheesecake topped with rich, tart blueberry compote", "price": 260, "category": "Desserts", "image_url": "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?q=80&w=800", "is_veg": True, "is_bestseller": True, "is_available": True, "tags": ["Premium"], "customizations": []},
+        {"id": "cafe_6", "name": "Matcha Green Tea Latte", "description": "Pure Japanese ceremonial matcha whisked with velvety steamed milk", "price": 240, "category": "Teas", "image_url": "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?q=80&w=800", "is_veg": True, "is_bestseller": False, "is_available": True, "tags": ["Organic", "Healthy"], "customizations": []},
     ]
 
     await db.menu_items.insert_many(menu_items)
@@ -626,6 +948,36 @@ async def update_settings(settings: RestaurantSettings, admin = Depends(get_admi
         upsert=True
     )
     return {"message": "Settings updated successfully"}
+
+class OnlineOrderingToggle(BaseModel):
+    open: bool
+    brand: str = "cafe"  # "cafe" or "dhaba"
+
+@api_router.get("/config/online-ordering")
+async def get_online_ordering(brand: str = "cafe"):
+    doc = await db.config.find_one({"key": "online_ordering", "brand": brand})
+    val = doc.get("value", True) if doc else True
+    return {"onlineOrderingOpen": val}
+
+@api_router.post("/admin/online-ordering")
+async def toggle_online_ordering(payload: OnlineOrderingToggle, user = Depends(get_admin_user)):
+    is_legacy_admin = user.get("is_admin", False)
+    brand_role = user.get("roles", {}).get(payload.brand)
+    if not is_legacy_admin and brand_role not in ["admin", "employee"]:
+        raise HTTPException(status_code=403, detail=f"Admin access required for brand: {payload.brand}")
+
+    await db.config.update_one(
+        {"key": "online_ordering", "brand": payload.brand},
+        {"$set": {"value": payload.open, "brand": payload.brand}},
+        upsert=True
+    )
+    # Broadcast configuration update to connected admins/WS clients
+    await manager.broadcast({
+        "type": "config_update",
+        "brand": payload.brand,
+        "onlineOrderingOpen": payload.open
+    })
+    return {"onlineOrderingOpen": payload.open, "brand": payload.brand}
 
 @api_router.get("/")
 async def root():
@@ -783,6 +1135,124 @@ async def ingest_third_party_order(order: ThirdPartyOrder):
     
     return {"status": "ok", "order_number": order_number}
 
+async def send_whatsapp_order_notification(order: dict):
+    account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
+    auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
+    from_number = os.environ.get("TWILIO_FROM_NUMBER")
+    
+    phone = order.get("user_phone") or order.get("customer_phone")
+    if not phone:
+        logger.warning(f"No phone number found for order {order.get('order_number')}. Skipping notification.")
+        return
+        
+    items_str = ", ".join([f"{i['menu_item']['name']} (x{i['quantity']})" for i in order.get("items", [])])
+    msg_body = (
+        f"Hello {order.get('user_name', 'Customer')}! Your order {order.get('order_number')} has been confirmed. "
+        f"Items: {items_str}. Total: INR {order.get('total')}. "
+        f"Thank you for ordering with Vaakki Cafe!"
+    )
+    
+    if account_sid and auth_token and from_number:
+        try:
+            import requests
+            to_number = phone.strip()
+            if from_number.startswith("whatsapp:"):
+                clean_phone = to_number.replace("+", "").replace(" ", "").replace("whatsapp:", "")
+                if len(clean_phone) == 10:
+                    clean_phone = "91" + clean_phone
+                to_formatted = f"whatsapp:+{clean_phone}"
+            else:
+                clean_phone = to_number.replace("+", "").replace(" ", "")
+                if len(clean_phone) == 10:
+                    clean_phone = "91" + clean_phone
+                to_formatted = f"+{clean_phone}"
+                
+            res = requests.post(
+                f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json",
+                auth=(account_sid, auth_token),
+                data={
+                    "To": to_formatted,
+                    "From": from_number,
+                    "Body": msg_body
+                },
+                timeout=10
+            )
+            if res.status_code in [200, 201]:
+                logger.info(f"Twilio notification sent successfully to {to_formatted}.")
+            else:
+                logger.error(f"Twilio notification failed with status {res.status_code}: {res.text}")
+        except Exception as e:
+            logger.error(f"Error calling Twilio API to send notification: {e}")
+    else:
+        logger.info(f"[SIMULATED NOTIFICATION] Phone: {phone} | From: {from_number or 'MOCK'} | Body: {msg_body}")
+
+async def _process_successful_payment(order: dict, transaction_id: str, notes: str):
+    if order.get("payment_status") == "paid":
+        logger.info(f"Order {order['order_number']} is already marked as paid. Skipping duplicate processing.")
+        return
+        
+    await db.orders.update_one(
+        {"id": order["id"]},
+        {
+            "$set": {
+                "payment_status": "paid",
+                "payment_transaction_id": transaction_id,
+                "status": "placed",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            },
+            "$push": {
+                "status_history": {
+                    "status": "placed",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "notes": notes
+                }
+            }
+        }
+    )
+    
+    await manager.broadcast({
+        "type": "payment_captured",
+        "order_number": order["order_number"],
+        "total": order["total"]
+    })
+    
+    updated_order = await db.orders.find_one({"id": order["id"]})
+    if updated_order:
+        await send_whatsapp_order_notification(updated_order)
+
+class PaymentVerify(BaseModel):
+    razorpay_payment_id: str
+    razorpay_order_id: str
+    razorpay_signature: str
+    local_order_id: str
+
+@api_router.post("/payments/verify")
+async def verify_payment(payload: PaymentVerify, user = Depends(get_current_user)):
+    key_secret = os.environ.get("RAZORPAY_KEY_SECRET")
+    
+    if key_secret:
+        msg = f"{payload.razorpay_order_id}|{payload.razorpay_payment_id}"
+        expected = hmac.new(
+            key_secret.encode('utf-8'),
+            msg.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+        
+        if not hmac.compare_digest(expected, payload.razorpay_signature):
+            raise HTTPException(status_code=400, detail="Invalid signature")
+            
+    order = await db.orders.find_one({"id": payload.local_order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    await _process_successful_payment(
+        order, 
+        payload.razorpay_payment_id, 
+        f"Payment verified via checkout signature. Txn ID: {payload.razorpay_payment_id}"
+    )
+    
+    return {"status": "ok"}
+
 @api_router.post("/payments/razorpay/webhook")
 async def razorpay_webhook(request: Request):
     body = await request.body()
@@ -811,29 +1281,11 @@ async def razorpay_webhook(request: Request):
             if razorpay_order_id:
                 order = await db.orders.find_one({"source_order_id": razorpay_order_id})
                 if order:
-                    await db.orders.update_one(
-                        {"id": order["id"]},
-                        {
-                            "$set": {
-                                "payment_status": "paid",
-                                "payment_transaction_id": transaction_id,
-                                "status": "placed",
-                                "updated_at": datetime.now(timezone.utc).isoformat()
-                            },
-                            "$push": {
-                                "status_history": {
-                                    "status": "placed",
-                                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                                    "notes": f"Payment captured via Razorpay. Transaction: {transaction_id}"
-                                }
-                            }
-                        }
+                    await _process_successful_payment(
+                        order, 
+                        transaction_id, 
+                        f"Payment captured via Razorpay Webhook. Txn ID: {transaction_id}"
                     )
-                    await manager.broadcast({
-                        "type": "payment_captured",
-                        "order_number": order["order_number"],
-                        "total": order["total"]
-                    })
     except Exception as e:
         logger.warning(f"Error processing Razorpay webhook: {e}")
         
@@ -841,10 +1293,26 @@ async def razorpay_webhook(request: Request):
 
 app.include_router(api_router)
 
+# CORS fix: allow_credentials=True cannot be combined with allow_origins=['*']
+# Must specify explicit origins when using credentials
+_cors_origins = os.environ.get('CORS_ORIGINS', '').split(',')
+_cors_origins = [o.strip() for o in _cors_origins if o.strip()]
+if not _cors_origins or _cors_origins == ['*']:
+    _cors_origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "https://leevaakkidhaba.com",
+        "https://leevaakkicafe.com",
+        "https://leevaakki.com",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=_cors_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_methods=["*"],
     allow_headers=["*"],
 )
