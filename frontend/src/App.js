@@ -506,12 +506,12 @@ const SnacksPage = () => {
           const quantity = cartItem?.quantity || 0;
 
           return (
-            <div key={item.id} style={{ display: "flex", flexDirection: "column", background: "#fff", borderRadius: "12px", padding: "0.75rem", position: "relative", border: "1px solid #f0f0f0" }}>
+            <div key={item.id} className="snack-item-card" style={{ display: "flex", flexDirection: "column", background: "#fff", borderRadius: "12px", padding: "0.75rem", position: "relative", border: "1px solid #f0f0f0", transition: "all 0.3s ease" }}>
               {/* Product Image and Add Button */}
               <div style={{ position: "relative", marginBottom: "1rem" }}>
                 <Heart size={18} style={{ position: "absolute", top: "0.25rem", right: "0.25rem", color: "#e91e63", cursor: "pointer" }} />
-                <div style={{ padding: "0.5rem", background: "#f8f9fa", borderRadius: "8px", height: "140px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "0.5rem" }}>
-                  <img src={item.image_url} alt={item.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", mixBlendMode: "multiply", borderRadius: "4px" }} />
+                <div style={{ padding: "0.5rem", background: "#f8f9fa", borderRadius: "8px", height: "140px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "0.5rem", overflow: "hidden" }}>
+                  <img className="snack-item-image" src={item.image_url} alt={item.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", mixBlendMode: "multiply", borderRadius: "4px", transition: "transform 0.3s ease" }} />
                 </div>
                 
                 <div style={{ position: "absolute", bottom: "-0.5rem", right: "0.5rem" }}>

@@ -2139,3 +2139,14 @@ body {
     gap: 32px;
   }
 }
+
+/* Snacks Hover Glow */
+.snack-item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(233, 30, 99, 0.15);
+  border-color: rgba(233, 30, 99, 0.3) !important;
+}
+
+.snack-item-card:hover .snack-item-image {
+  transform: scale(1.08);
+}
