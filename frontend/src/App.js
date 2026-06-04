@@ -442,6 +442,7 @@ const SNACK_ITEMS = [
     discount: "26% OFF",
     weight: "1 pack (200 g)",
     tag: "Bestseller",
+    category: "Bhujia",
     rating: "4.8(90k)",
     image_url: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?q=80&w=400",
   },
@@ -454,6 +455,7 @@ const SNACK_ITEMS = [
     discount: "33 OFF",
     weight: "1 pack (82 g or 88 g)",
     tag: "Chatpata Masala",
+    category: "Wafers",
     rating: "4.8(90k)",
     image_url: "https://images.unsplash.com/photo-1566478989037-e924e5efa0f7?q=80&w=400",
     variants: [
@@ -486,6 +488,7 @@ const SNACK_ITEMS = [
     discount: "29 OFF",
     weight: "1 pack (70 g)",
     tag: "Sweet & Salty",
+    category: "Mixture",
     rating: "4.6(5k)",
     image_url: "https://images.unsplash.com/photo-1605333396914-2c70fb907311?q=80&w=400",
   },
@@ -498,6 +501,7 @@ const SNACK_ITEMS = [
     discount: "27 OFF",
     weight: "1 pack (65 g)",
     tag: "Crispy",
+    category: "Chakli",
     rating: "4.7(12k)",
     image_url: "https://images.unsplash.com/photo-1596450514735-a50e18987b28?q=80&w=400",
   }
@@ -508,6 +512,15 @@ const SnacksPage = () => {
   const navigate = useNavigate();
   const [selectedSnack, setSelectedSnack] = useState(null);
   const [showOptions, setShowOptions] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("Popular");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchActive, setIsSearchActive] = useState(false);
+
+  const filteredSnacks = SNACK_ITEMS.filter(item => {
+    const matchesCategory = selectedCategory === "Popular" || item.category === selectedCategory;
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || (item.tag && item.tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1rem 0.5rem", minHeight: "80vh", paddingBottom: "100px", background: "#f8f9fa" }}>
@@ -518,33 +531,59 @@ const SnacksPage = () => {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <Heart size={20} />
-          <Search size={20} />
+          <Search size={20} onClick={() => setIsSearchActive(!isSearchActive)} style={{ cursor: "pointer" }} />
         </div>
       </div>
+
+      {isSearchActive && (
+        <div style={{ padding: "0 0.5rem", marginBottom: "1.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", background: "#fff", borderRadius: "12px", padding: "8px 16px", border: "1px solid #e0e0e0" }}>
+            <Search size={18} color="#757575" />
+            <input 
+              type="text" 
+              placeholder="Search snacks..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ border: "none", outline: "none", flex: 1, marginLeft: "8px", fontSize: "0.95rem" }}
+              autoFocus
+            />
+            {searchQuery && <X size={18} color="#757575" style={{ cursor: "pointer" }} onClick={() => setSearchQuery("")} />}
+          </div>
+        </div>
+      )}
 
       {/* Popular picks section */}
       <div style={{ marginBottom: "1.5rem", background: "#fff", padding: "1rem 0", margin: "0 -0.5rem 1.5rem", borderRadius: "16px" }}>
         <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#1A1A1A", marginBottom: "1rem", padding: "0 1rem" }}>Popular picks</h2>
         <div style={{ display: "flex", overflowX: "auto", gap: "1rem", padding: "0 1rem 0.5rem", scrollbarWidth: "none", msOverflowStyle: "none" }} className="hide-scrollbar">
           {[
+            { name: "Popular", image: null },
             { name: "Bhujia", image: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?q=80&w=200" },
             { name: "Mixture", image: "https://images.unsplash.com/photo-1605333396914-2c70fb907311?q=80&w=200" },
             { name: "Chakli", image: "https://images.unsplash.com/photo-1596450514735-a50e18987b28?q=80&w=200" },
             { name: "Wafers", image: "https://images.unsplash.com/photo-1566478989037-e924e5efa0f7?q=80&w=200" },
             { name: "Crisps", image: "https://images.unsplash.com/photo-1585238341295-883eb7e39023?q=80&w=200" }
-          ].map((cat, idx) => (
-            <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "72px", cursor: "pointer" }}>
-              <div style={{ width: "72px", height: "72px", borderRadius: "16px", background: "#f0f4f8", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: "0.5rem" }}>
-                <img src={cat.image} alt={cat.name} style={{ width: "80%", height: "80%", objectFit: "contain", mixBlendMode: "multiply" }} />
+          ].map((cat, idx) => {
+            const isActive = selectedCategory === cat.name;
+            return (
+              <div key={idx} onClick={() => setSelectedCategory(cat.name)} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "72px", cursor: "pointer", opacity: isActive ? 1 : 0.7 }}>
+                <div style={{ width: "72px", height: "72px", borderRadius: "16px", background: isActive ? "#fce4ec" : "#f0f4f8", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: "0.5rem", border: isActive ? "2px solid #e91e63" : "2px solid transparent", transition: "all 0.2s ease" }}>
+                  {cat.image ? <img src={cat.image} alt={cat.name} style={{ width: "80%", height: "80%", objectFit: "contain", mixBlendMode: "multiply" }} /> : <Star size={32} color="#e91e63" fill="#e91e63" />}
+                </div>
+                <span style={{ fontSize: "0.8rem", fontWeight: isActive ? "700" : "600", color: isActive ? "#e91e63" : "#333" }}>{cat.name}</span>
               </div>
-              <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "#333" }}>{cat.name}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-        {SNACK_ITEMS.map((item) => {
+      {filteredSnacks.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "2rem", color: "#757575" }}>
+          <p>No snacks found.</p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          {filteredSnacks.map((item) => {
           const cartItem = items.find(i => i.menu_item.id === item.id);
           const quantity = cartItem?.quantity || 0;
 
@@ -606,6 +645,7 @@ const SnacksPage = () => {
           );
         })}
       </div>
+      )}
 
       {/* Floating Cart Bottom Bar */}
       {itemCount > 0 && (
