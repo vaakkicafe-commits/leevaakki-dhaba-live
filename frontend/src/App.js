@@ -1662,6 +1662,7 @@ const TrackOrderPage = () => {
       setOrderNumber(orderNum);
       trackOrder(orderNum);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
   const trackOrder = async (num) => {

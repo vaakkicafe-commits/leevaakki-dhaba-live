@@ -170,6 +170,7 @@ const AdminDashboard = ({ user, token }) => {
       console.log('WebSocket not supported, using polling');
       startPolling();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [soundEnabled]);
 
   // Polling fallback for environments without WebSocket
@@ -206,6 +207,7 @@ const AdminDashboard = ({ user, token }) => {
         console.log('Polling error:', err);
       }
     }, 10000); // Poll every 10 seconds
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, soundEnabled]);
 
   useEffect(() => {
@@ -237,6 +239,7 @@ const AdminDashboard = ({ user, token }) => {
         clearInterval(pollingRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, token, navigate, connectWebSocket]);
 
   const fetchData = async () => {
@@ -817,6 +820,7 @@ const CouponsTab = ({ token }) => {
 
   useEffect(() => {
     fetchCoupons();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchCoupons = async () => {
