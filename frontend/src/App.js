@@ -625,8 +625,8 @@ const SnacksPage = () => {
             const isActive = selectedCategory === cat.name;
             return (
               <div key={idx} onClick={() => setSelectedCategory(cat.name)} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "72px", cursor: "pointer", opacity: isActive ? 1 : 0.7 }}>
-                <div style={{ width: "72px", height: "72px", borderRadius: "16px", background: isActive ? "#fce4ec" : "#f0f4f8", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: "0.5rem", border: isActive ? "2px solid #e91e63" : "2px solid transparent", transition: "all 0.2s ease" }}>
-                  {cat.image ? <img src={cat.image} alt={cat.name} style={{ width: "80%", height: "80%", objectFit: "contain", mixBlendMode: "multiply" }} /> : <Star size={32} color="#e91e63" fill="#e91e63" />}
+                <div style={{ width: "72px", height: "72px", borderRadius: "16px", background: isActive ? "#331a24" : "#222", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: "0.5rem", border: isActive ? "2px solid #e91e63" : "2px solid transparent", transition: "all 0.2s ease" }}>
+                  {cat.image ? <img src={cat.image} alt={cat.name} style={{ width: "80%", height: "80%", objectFit: "contain" }} /> : <Star size={32} color="#e91e63" fill="#e91e63" />}
                 </div>
                 <span style={{ fontSize: "0.8rem", fontWeight: isActive ? "700" : "600", color: isActive ? "#e91e63" : "#333" }}>{cat.name}</span>
               </div>
@@ -649,9 +649,9 @@ const SnacksPage = () => {
             <div key={item.id} className="snack-item-card" style={{ display: "flex", flexDirection: "column", background: "#fff", borderRadius: "12px", padding: "0.75rem", position: "relative", border: "1px solid #f0f0f0", transition: "all 0.3s ease" }}>
               {/* Product Image and Add Button */}
               <div style={{ position: "relative", marginBottom: "1rem" }}>
-                <Heart size={18} style={{ position: "absolute", top: "0.25rem", right: "0.25rem", color: "#e91e63", cursor: "pointer" }} />
-                <div style={{ padding: "0.5rem", background: "#f8f9fa", borderRadius: "8px", height: "140px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "0.5rem", overflow: "hidden" }}>
-                  <img className="snack-item-image" src={item.image_url} alt={item.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", mixBlendMode: "multiply", borderRadius: "4px", transition: "transform 0.3s ease" }} />
+                <Heart size={18} style={{ position: "absolute", top: "0.25rem", right: "0.25rem", color: "#e91e63", cursor: "pointer", zIndex: 10 }} />
+                <div style={{ padding: "0.5rem", background: "#111", borderRadius: "8px", height: "140px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "0.5rem", overflow: "hidden" }}>
+                  <img className="snack-item-image" src={item.image_url} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "4px", transition: "transform 0.3s ease" }} />
                 </div>
                 
                 <div style={{ position: "absolute", bottom: "-0.5rem", right: "0.5rem" }}>
