@@ -455,8 +455,27 @@ const SNACK_ITEMS = [
     weight: "1 pack (82 g or 88 g)",
     tag: "Chatpata Masala",
     rating: "4.8(90k)",
-    optionsCount: 3,
     image_url: "https://images.unsplash.com/photo-1566478989037-e924e5efa0f7?q=80&w=400",
+    variants: [
+      {
+        id: "snack_masala_chips_82g",
+        label: "82 g pack",
+        price: 27,
+        original_price: 60
+      },
+      {
+        id: "snack_masala_chips_88g",
+        label: "88 g pack",
+        price: 35,
+        original_price: 70
+      },
+      {
+        id: "snack_masala_chips_family",
+        label: "Family pack",
+        price: 90,
+        original_price: 120
+      }
+    ]
   },
   {
     id: "snack_khatta_meetha",
@@ -487,6 +506,8 @@ const SNACK_ITEMS = [
 const SnacksPage = () => {
   const { addItem, items, itemCount, subtotal } = useCart();
   const navigate = useNavigate();
+  const [selectedSnack, setSelectedSnack] = useState(null);
+  const [showOptions, setShowOptions] = useState(false);
 
   return (
     <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1rem 0.5rem", minHeight: "80vh", paddingBottom: "100px", background: "#f8f9fa" }}>
@@ -540,16 +561,18 @@ const SnacksPage = () => {
                   {quantity === 0 ? (
                     <button
                       onClick={() => {
-                        if (item.optionsCount) {
-                          alert("Select Options Modal");
+                        const hasVariants = Array.isArray(item.variants) && item.variants.length > 0;
+                        if (hasVariants) {
+                          setSelectedSnack(item);
+                          setShowOptions(true);
                         } else {
                           addItem({ ...item, category: "snacks" }, 1);
                         }
                       }}
-                      style={{ background: "#fff", color: "#e91e63", border: "1px solid #e91e63", borderRadius: "8px", padding: item.optionsCount ? "2px 12px" : "4px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}
+                      style={{ background: "#fff", color: "#e91e63", border: "1px solid #e91e63", borderRadius: "8px", padding: (Array.isArray(item.variants) && item.variants.length > 0) ? "2px 12px" : "4px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}
                     >
                       <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>ADD</span>
-                      {item.optionsCount && <span style={{ fontSize: "0.55rem", fontWeight: "600", marginTop: "-2px", color: "#e91e63" }}>{item.optionsCount} options</span>}
+                      {(Array.isArray(item.variants) && item.variants.length > 0) && <span style={{ fontSize: "0.55rem", fontWeight: "600", marginTop: "-2px", color: "#e91e63" }}>{item.variants.length} options</span>}
                     </button>
                   ) : (
                     <div style={{ background: "#e91e63", color: "#fff", borderRadius: "8px", padding: "4px 12px", display: "flex", alignItems: "center", gap: "12px", fontSize: "0.85rem", fontWeight: "700", boxShadow: "0 2px 4px rgba(233,30,99,0.3)" }}>
@@ -599,6 +622,104 @@ const SnacksPage = () => {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px", fontWeight: "700", fontSize: "0.9rem" }}>
             View Cart <ChevronRight size={18} />
+          </div>
+        </div>
+      )}
+
+      {/* Options Modal */}
+      {showOptions && selectedSnack && (
+        <div
+          style={{
+            position: "fixed",
+            left: "50%",
+            transform: "translateX(-50%)",
+            bottom: 0,
+            width: "100%",
+            maxWidth: "600px",
+            background: "#fff",
+            borderTopLeftRadius: "16px",
+            borderTopRightRadius: "16px",
+            boxShadow: "0 -4px 16px rgba(0,0,0,0.15)",
+            padding: "16px",
+            zIndex: 1100
+          }}
+        >
+          <div
+            style={{
+              width: "40px",
+              height: "4px",
+              borderRadius: "999px",
+              background: "#e0e0e0",
+              margin: "0 auto 12px"
+            }}
+          />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+            <h3 style={{ margin: 0, fontSize: "1rem", color: "#1A1A1A" }}>Select option</h3>
+            <span
+              onClick={() => setShowOptions(false)}
+              style={{ fontSize: "0.9rem", color: "#757575", cursor: "pointer", fontWeight: "600" }}
+            >
+              Close
+            </span>
+          </div>
+          <p style={{ margin: "0 0 16px", fontSize: "0.85rem", color: "#757575", fontWeight: "500" }}>
+            {selectedSnack.name}
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", paddingBottom: "24px" }}>
+            {selectedSnack.variants?.map((variant) => (
+              <div
+                key={variant.id}
+                onClick={() => {
+                  addItem(
+                    {
+                      ...selectedSnack,
+                      ...variant,
+                      id: variant.id, // ensure each variant is unique in cart
+                      category: "snacks"
+                    },
+                    1
+                  );
+                  setShowOptions(false);
+                }}
+                style={{
+                  borderRadius: "10px",
+                  border: "1px solid #e0e0e0",
+                  padding: "12px 16px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  cursor: "pointer",
+                  background: "#fafafa"
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ fontSize: "0.95rem", fontWeight: 600, color: "#1A1A1A" }}>{variant.label}</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
+                  <span
+                    style={{
+                      fontSize: "0.95rem",
+                      fontWeight: 700,
+                      color: "#2E7D32"
+                    }}
+                  >
+                    ₹{variant.price}
+                  </span>
+                  {variant.original_price && (
+                    <span
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "#9e9e9e",
+                        textDecoration: "line-through"
+                      }}
+                    >
+                      ₹{variant.original_price}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
