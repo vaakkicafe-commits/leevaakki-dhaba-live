@@ -434,134 +434,394 @@ const Footer = () => {
 // --- Snacks Data & Component ---
 const SNACK_ITEMS = [
   {
-    id: "snack_dal_crisp",
-    name: "Dal Crisp (Munch Masala)",
-    description: "Baked not fried dal crisp with munch masala.",
-    price: 20,
-    original_price: 20,
-    discount: null,
-    weight: "1 pack",
-    tag: "Bestseller",
-    category: "Crisp",
-    rating: "4.9(12k)",
-    image_url: "/snacks/dal_crisp.png",
+    "id": "snack_dal_crisp",
+    "name": "Dal Crisp (Munch Masala)",
+    "description": "Baked not fried dal crisp with munch masala.",
+    "price": 20,
+    "original_price": 20,
+    "discount": null,
+    "weight": "Options available (25g, 100g, 500g)",
+    "tag": "Bestseller",
+    "category": "Crisp",
+    "rating": "4.9(12k)",
+    "image_url": "/snacks/dal_crisp.png",
+    "variants": [
+      {
+        "id": "snack_dal_crisp_25g",
+        "label": "25g",
+        "price": 20,
+        "original_price": 25,
+        "weight": "25g",
+        "discount": "20% OFF"
+      },
+      {
+        "id": "snack_dal_crisp_100g",
+        "label": "100g",
+        "price": 89,
+        "original_price": 110,
+        "weight": "100g",
+        "discount": "19% OFF"
+      },
+      {
+        "id": "snack_dal_crisp_500g",
+        "label": "500g",
+        "price": 333,
+        "original_price": 400,
+        "weight": "500g",
+        "discount": "16% OFF"
+      }
+    ]
   },
   {
-    id: "snack_chana_dal",
-    name: "Chana Dal (Munch Masala)",
-    description: "Baked chana dal with chatpata masala.",
-    price: 20,
-    original_price: 20,
-    discount: null,
-    weight: "1 pack",
-    tag: "Spicy",
-    category: "Dal",
-    rating: "4.8(9k)",
-    image_url: "/snacks/chana_dal.png",
+    "id": "snack_chana_dal",
+    "name": "Chana Dal (Munch Masala)",
+    "description": "Baked chana dal with chatpata masala.",
+    "price": 20,
+    "original_price": 20,
+    "discount": null,
+    "weight": "Options available (25g, 100g, 500g)",
+    "tag": "Spicy",
+    "category": "Dal",
+    "rating": "4.8(9k)",
+    "image_url": "/snacks/chana_dal.png",
+    "variants": [
+      {
+        "id": "snack_chana_dal_25g",
+        "label": "25g",
+        "price": 20,
+        "original_price": 25,
+        "weight": "25g",
+        "discount": "20% OFF"
+      },
+      {
+        "id": "snack_chana_dal_100g",
+        "label": "100g",
+        "price": 89,
+        "original_price": 110,
+        "weight": "100g",
+        "discount": "19% OFF"
+      },
+      {
+        "id": "snack_chana_dal_500g",
+        "label": "500g",
+        "price": 333,
+        "original_price": 400,
+        "weight": "500g",
+        "discount": "16% OFF"
+      }
+    ]
   },
   {
-    id: "snack_cheese_balls",
-    name: "Cheese Balls (Classic Cheddar)",
-    description: "Air puffed classic cheddar cheese balls.",
-    price: 20,
-    original_price: 20,
-    discount: null,
-    weight: "1 pack",
-    tag: "Kids Favorite",
-    category: "Chips",
-    rating: "4.7(15k)",
-    image_url: "/snacks/cheese_balls.png",
+    "id": "snack_cheese_balls",
+    "name": "Cheese Balls (Classic Cheddar)",
+    "description": "Air puffed classic cheddar cheese balls.",
+    "price": 20,
+    "original_price": 20,
+    "discount": null,
+    "weight": "Options available (25g, 100g, 500g)",
+    "tag": "Kids Favorite",
+    "category": "Chips",
+    "rating": "4.7(15k)",
+    "image_url": "/snacks/cheese_balls.png",
+    "variants": [
+      {
+        "id": "snack_cheese_balls_25g",
+        "label": "25g",
+        "price": 20,
+        "original_price": 25,
+        "weight": "25g",
+        "discount": "20% OFF"
+      },
+      {
+        "id": "snack_cheese_balls_100g",
+        "label": "100g",
+        "price": 89,
+        "original_price": 110,
+        "weight": "100g",
+        "discount": "19% OFF"
+      },
+      {
+        "id": "snack_cheese_balls_500g",
+        "label": "500g",
+        "price": 333,
+        "original_price": 400,
+        "weight": "500g",
+        "discount": "16% OFF"
+      }
+    ]
   },
   {
-    id: "snack_moong_dal",
-    name: "Moong Dal (Munch Masala)",
-    description: "Baked moong dal with munch masala.",
-    price: 20,
-    original_price: 20,
-    discount: null,
-    weight: "1 pack",
-    tag: "Crunchy",
-    category: "Dal",
-    rating: "4.9(8k)",
-    image_url: "/snacks/moong_dal.png",
+    "id": "snack_moong_dal",
+    "name": "Moong Dal (Munch Masala)",
+    "description": "Baked moong dal with munch masala.",
+    "price": 20,
+    "original_price": 20,
+    "discount": null,
+    "weight": "Options available (25g, 100g, 500g)",
+    "tag": "Crunchy",
+    "category": "Dal",
+    "rating": "4.9(8k)",
+    "image_url": "/snacks/moong_dal.png",
+    "variants": [
+      {
+        "id": "snack_moong_dal_25g",
+        "label": "25g",
+        "price": 20,
+        "original_price": 25,
+        "weight": "25g",
+        "discount": "20% OFF"
+      },
+      {
+        "id": "snack_moong_dal_100g",
+        "label": "100g",
+        "price": 89,
+        "original_price": 110,
+        "weight": "100g",
+        "discount": "19% OFF"
+      },
+      {
+        "id": "snack_moong_dal_500g",
+        "label": "500g",
+        "price": 333,
+        "original_price": 400,
+        "weight": "500g",
+        "discount": "16% OFF"
+      }
+    ]
   },
   {
-    id: "snack_salted_peanuts",
-    name: "Salted Peanuts (Premium Roasted)",
-    description: "Baked premium roasted salted peanuts.",
-    price: 20,
-    original_price: 20,
-    discount: null,
-    weight: "1 pack",
-    tag: "Classic",
-    category: "Peanuts",
-    rating: "4.8(20k)",
-    image_url: "/snacks/salted_peanuts.png",
+    "id": "snack_salted_peanuts",
+    "name": "Salted Peanuts (Premium Roasted)",
+    "description": "Baked premium roasted salted peanuts.",
+    "price": 20,
+    "original_price": 20,
+    "discount": null,
+    "weight": "Options available (25g, 100g, 500g)",
+    "tag": "Classic",
+    "category": "Peanuts",
+    "rating": "4.8(20k)",
+    "image_url": "/snacks/salted_peanuts.png",
+    "variants": [
+      {
+        "id": "snack_salted_peanuts_25g",
+        "label": "25g",
+        "price": 20,
+        "original_price": 25,
+        "weight": "25g",
+        "discount": "20% OFF"
+      },
+      {
+        "id": "snack_salted_peanuts_100g",
+        "label": "100g",
+        "price": 89,
+        "original_price": 110,
+        "weight": "100g",
+        "discount": "19% OFF"
+      },
+      {
+        "id": "snack_salted_peanuts_500g",
+        "label": "500g",
+        "price": 333,
+        "original_price": 400,
+        "weight": "500g",
+        "discount": "16% OFF"
+      }
+    ]
   },
   {
-    id: "snack_mixture_farsan",
-    name: "Mixture Farsan (Bombay Mix)",
-    description: "Baked bombay mix mixture farsan.",
-    price: 20,
-    original_price: 20,
-    discount: null,
-    weight: "1 pack",
-    tag: "Tea Time",
-    category: "Mixture",
-    rating: "4.6(11k)",
-    image_url: "/snacks/mixture_farsan.png",
+    "id": "snack_mixture_farsan",
+    "name": "Mixture Farsan (Bombay Mix)",
+    "description": "Baked bombay mix mixture farsan.",
+    "price": 20,
+    "original_price": 20,
+    "discount": null,
+    "weight": "Options available (25g, 100g, 500g)",
+    "tag": "Tea Time",
+    "category": "Mixture",
+    "rating": "4.6(11k)",
+    "image_url": "/snacks/mixture_farsan.png",
+    "variants": [
+      {
+        "id": "snack_mixture_farsan_25g",
+        "label": "25g",
+        "price": 20,
+        "original_price": 25,
+        "weight": "25g",
+        "discount": "20% OFF"
+      },
+      {
+        "id": "snack_mixture_farsan_100g",
+        "label": "100g",
+        "price": 89,
+        "original_price": 110,
+        "weight": "100g",
+        "discount": "19% OFF"
+      },
+      {
+        "id": "snack_mixture_farsan_500g",
+        "label": "500g",
+        "price": 333,
+        "original_price": 400,
+        "weight": "500g",
+        "discount": "16% OFF"
+      }
+    ]
   },
   {
-    id: "snack_green_peanuts",
-    name: "Green Peanuts (Munch Masala)",
-    description: "Baked munch masala green peanuts.",
-    price: 20,
-    original_price: 20,
-    discount: null,
-    weight: "1 pack",
-    tag: "Unique",
-    category: "Peanuts",
-    rating: "4.7(6k)",
-    image_url: "/snacks/green_peanuts.png",
+    "id": "snack_green_peanuts",
+    "name": "Green Peanuts (Munch Masala)",
+    "description": "Baked munch masala green peanuts.",
+    "price": 20,
+    "original_price": 20,
+    "discount": null,
+    "weight": "Options available (25g, 100g, 500g)",
+    "tag": "Unique",
+    "category": "Peanuts",
+    "rating": "4.7(6k)",
+    "image_url": "/snacks/green_peanuts.png",
+    "variants": [
+      {
+        "id": "snack_green_peanuts_25g",
+        "label": "25g",
+        "price": 20,
+        "original_price": 25,
+        "weight": "25g",
+        "discount": "20% OFF"
+      },
+      {
+        "id": "snack_green_peanuts_100g",
+        "label": "100g",
+        "price": 89,
+        "original_price": 110,
+        "weight": "100g",
+        "discount": "19% OFF"
+      },
+      {
+        "id": "snack_green_peanuts_500g",
+        "label": "500g",
+        "price": 333,
+        "original_price": 400,
+        "weight": "500g",
+        "discount": "16% OFF"
+      }
+    ]
   },
   {
-    id: "snack_corn_flakes",
-    name: "Corn Flakes Chivda (Sweet & Sour)",
-    description: "Baked sweet & sour corn flakes chivda.",
-    price: 20,
-    original_price: 20,
-    discount: null,
-    weight: "1 pack",
-    tag: "Sweet & Salty",
-    category: "Mixture",
-    rating: "4.8(5k)",
-    image_url: "/snacks/corn_flakes_chivda.png",
+    "id": "snack_corn_flakes",
+    "name": "Corn Flakes Chivda (Sweet & Sour)",
+    "description": "Baked sweet & sour corn flakes chivda.",
+    "price": 20,
+    "original_price": 20,
+    "discount": null,
+    "weight": "Options available (25g, 100g, 500g)",
+    "tag": "Sweet & Salty",
+    "category": "Mixture",
+    "rating": "4.8(5k)",
+    "image_url": "/snacks/corn_flakes_chivda.png",
+    "variants": [
+      {
+        "id": "snack_corn_flakes_25g",
+        "label": "25g",
+        "price": 20,
+        "original_price": 25,
+        "weight": "25g",
+        "discount": "20% OFF"
+      },
+      {
+        "id": "snack_corn_flakes_100g",
+        "label": "100g",
+        "price": 89,
+        "original_price": 110,
+        "weight": "100g",
+        "discount": "19% OFF"
+      },
+      {
+        "id": "snack_corn_flakes_500g",
+        "label": "500g",
+        "price": 333,
+        "original_price": 400,
+        "weight": "500g",
+        "discount": "16% OFF"
+      }
+    ]
   },
   {
-    id: "snack_potato_chips",
-    name: "Potato Chips (Classic Masala)",
-    description: "Baked classic masala potato chips.",
-    price: 20,
-    original_price: 20,
-    discount: null,
-    weight: "1 pack",
-    tag: "Bestseller",
-    category: "Chips",
-    rating: "4.9(25k)",
-    image_url: "/snacks/potato_chips.png",
+    "id": "snack_potato_chips",
+    "name": "Potato Chips (Classic Masala)",
+    "description": "Baked classic masala potato chips.",
+    "price": 20,
+    "original_price": 20,
+    "discount": null,
+    "weight": "Options available (25g, 100g, 500g)",
+    "tag": "Bestseller",
+    "category": "Chips",
+    "rating": "4.9(25k)",
+    "image_url": "/snacks/potato_chips.png",
+    "variants": [
+      {
+        "id": "snack_potato_chips_25g",
+        "label": "25g",
+        "price": 20,
+        "original_price": 25,
+        "weight": "25g",
+        "discount": "20% OFF"
+      },
+      {
+        "id": "snack_potato_chips_100g",
+        "label": "100g",
+        "price": 89,
+        "original_price": 110,
+        "weight": "100g",
+        "discount": "19% OFF"
+      },
+      {
+        "id": "snack_potato_chips_500g",
+        "label": "500g",
+        "price": 333,
+        "original_price": 400,
+        "weight": "500g",
+        "discount": "16% OFF"
+      }
+    ]
   },
   {
-    id: "snack_roasted_almonds",
-    name: "Roasted Almonds (Natural Sea Salt)",
-    description: "Baked natural sea salt roasted almonds.",
-    price: 20,
-    original_price: 20,
-    discount: null,
-    weight: "1 pack",
-    tag: "Premium",
-    category: "Nuts",
-    rating: "4.9(4k)",
-    image_url: "/snacks/roasted_almonds.png",
+    "id": "snack_roasted_almonds",
+    "name": "Roasted Almonds (Natural Sea Salt)",
+    "description": "Baked natural sea salt roasted almonds.",
+    "price": 20,
+    "original_price": 20,
+    "discount": null,
+    "weight": "Options available (25g, 100g, 500g)",
+    "tag": "Premium",
+    "category": "Nuts",
+    "rating": "4.9(4k)",
+    "image_url": "/snacks/roasted_almonds.png",
+    "variants": [
+      {
+        "id": "snack_roasted_almonds_25g",
+        "label": "25g",
+        "price": 20,
+        "original_price": 25,
+        "weight": "25g",
+        "discount": "20% OFF"
+      },
+      {
+        "id": "snack_roasted_almonds_100g",
+        "label": "100g",
+        "price": 89,
+        "original_price": 110,
+        "weight": "100g",
+        "discount": "19% OFF"
+      },
+      {
+        "id": "snack_roasted_almonds_500g",
+        "label": "500g",
+        "price": 333,
+        "original_price": 400,
+        "weight": "500g",
+        "discount": "16% OFF"
+      }
+    ]
   }
 ];
 
