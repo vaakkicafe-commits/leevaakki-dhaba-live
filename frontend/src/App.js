@@ -455,6 +455,7 @@ const SNACK_ITEMS = [
     weight: "1 pack (82 g or 88 g)",
     tag: "Chatpata Masala",
     rating: "4.8(90k)",
+    optionsCount: 3,
     image_url: "https://images.unsplash.com/photo-1566478989037-e924e5efa0f7?q=80&w=400",
   },
   {
@@ -500,6 +501,27 @@ const SnacksPage = () => {
         </div>
       </div>
 
+      {/* Popular picks section */}
+      <div style={{ marginBottom: "1.5rem", background: "#fff", padding: "1rem 0", margin: "0 -0.5rem 1.5rem", borderRadius: "16px" }}>
+        <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#1A1A1A", marginBottom: "1rem", padding: "0 1rem" }}>Popular picks</h2>
+        <div style={{ display: "flex", overflowX: "auto", gap: "1rem", padding: "0 1rem 0.5rem", scrollbarWidth: "none", msOverflowStyle: "none" }} className="hide-scrollbar">
+          {[
+            { name: "Bhujia", image: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?q=80&w=200" },
+            { name: "Mixture", image: "https://images.unsplash.com/photo-1605333396914-2c70fb907311?q=80&w=200" },
+            { name: "Chakli", image: "https://images.unsplash.com/photo-1596450514735-a50e18987b28?q=80&w=200" },
+            { name: "Wafers", image: "https://images.unsplash.com/photo-1566478989037-e924e5efa0f7?q=80&w=200" },
+            { name: "Crisps", image: "https://images.unsplash.com/photo-1585238341295-883eb7e39023?q=80&w=200" }
+          ].map((cat, idx) => (
+            <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "72px", cursor: "pointer" }}>
+              <div style={{ width: "72px", height: "72px", borderRadius: "16px", background: "#f0f4f8", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: "0.5rem" }}>
+                <img src={cat.image} alt={cat.name} style={{ width: "80%", height: "80%", objectFit: "contain", mixBlendMode: "multiply" }} />
+              </div>
+              <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "#333" }}>{cat.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
         {SNACK_ITEMS.map((item) => {
           const cartItem = items.find(i => i.menu_item.id === item.id);
@@ -517,10 +539,17 @@ const SnacksPage = () => {
                 <div style={{ position: "absolute", bottom: "-0.5rem", right: "0.5rem" }}>
                   {quantity === 0 ? (
                     <button
-                      onClick={() => addItem({ ...item, category: "snacks" }, 1)}
-                      style={{ background: "#fff", color: "#e91e63", border: "1px solid #e91e63", borderRadius: "8px", padding: "4px 16px", fontSize: "0.85rem", fontWeight: "700", cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}
+                      onClick={() => {
+                        if (item.optionsCount) {
+                          alert("Select Options Modal");
+                        } else {
+                          addItem({ ...item, category: "snacks" }, 1);
+                        }
+                      }}
+                      style={{ background: "#fff", color: "#e91e63", border: "1px solid #e91e63", borderRadius: "8px", padding: item.optionsCount ? "2px 12px" : "4px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}
                     >
-                      ADD
+                      <span style={{ fontSize: "0.85rem", fontWeight: "700" }}>ADD</span>
+                      {item.optionsCount && <span style={{ fontSize: "0.55rem", fontWeight: "600", marginTop: "-2px", color: "#e91e63" }}>{item.optionsCount} options</span>}
                     </button>
                   ) : (
                     <div style={{ background: "#e91e63", color: "#fff", borderRadius: "8px", padding: "4px 12px", display: "flex", alignItems: "center", gap: "12px", fontSize: "0.85rem", fontWeight: "700", boxShadow: "0 2px 4px rgba(233,30,99,0.3)" }}>

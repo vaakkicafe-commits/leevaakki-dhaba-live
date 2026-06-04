@@ -2150,3 +2150,8 @@ body {
 .snack-item-card:hover .snack-item-image {
   transform: scale(1.08);
 }
+
+/* Hide scrollbar for horizontal scroll areas */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
