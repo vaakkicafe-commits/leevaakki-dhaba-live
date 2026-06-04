@@ -1354,7 +1354,7 @@ const GoogleLoginModal = ({ isOpen, onClose, onSuccess }) => {
 };
 
 const CartPage = () => {
-  const { items, updateQuantity, removeItem, subtotal, clearCart } = useCart();
+  const { items, updateQuantity, removeItem, subtotal, clearCart, addItem } = useCart();
   const { user } = useAuth();
   const { onlineOrderingOpen } = useOnlineOrdering();
   const navigate = useNavigate();
@@ -1423,6 +1423,48 @@ const CartPage = () => {
               <button className="remove-btn" onClick={() => { navigator.vibrate?.([50, 30, 50]); removeItem(menu_item.id); }}><X size={18} /></button>
             </div>
           ))}
+        </div>
+
+        <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "20px", border: "1px solid #eaeaea", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
+            <span style={{ color: "#673ab7", fontWeight: "800", fontStyle: "italic", fontSize: "1.4rem", letterSpacing: "-1px" }}>café</span>
+            <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: "700", color: "#1A1A1A" }}>Last-minute cravings?</h3>
+          </div>
+          <p style={{ color: "#757575", fontSize: "0.85rem", margin: "0 0 16px" }}>Add a quick bite before you check out!</p>
+          
+          <div style={{ display: "flex", overflowX: "auto", gap: "12px", paddingBottom: "8px" }} className="hide-scrollbar">
+            {[
+              { id: "crave_1", name: "Tiramisu", price: 69, original_price: 139, image_url: "https://images.unsplash.com/photo-1571115177098-24c42de1bd2f?q=80&w=200", weight: "1 Piece" },
+              { id: "crave_2", name: "Plain Maggi", price: 59, original_price: 99, image_url: "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?q=80&w=200", weight: "Serves 1" },
+              { id: "crave_3", name: "Chicken Classic Burger", price: 99, original_price: 159, image_url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=200", weight: "200 g" }
+            ].map(item => {
+              const inCart = items.some(i => i.menu_item.id === item.id);
+              return (
+                <div key={item.id} style={{ minWidth: "135px", border: "1px solid #f0f0f0", borderRadius: "12px", padding: "8px", background: "#fff", position: "relative" }}>
+                  <Heart size={16} color="#e91e63" style={{ position: "absolute", top: "12px", right: "12px", zIndex: 2 }} />
+                  <div style={{ background: "#f8f9fa", borderRadius: "8px", height: "100px", marginBottom: "8px", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <img src={item.image_url} alt={item.name} style={{ width: "90%", height: "90%", objectFit: "cover", borderRadius: "6px" }} />
+                    <button 
+                      onClick={() => !inCart && addItem({ ...item, category: "cravings" }, 1)}
+                      style={{ position: "absolute", bottom: "-6px", right: "4px", background: "#fff", border: "1px solid #e91e63", color: "#e91e63", borderRadius: "8px", width: "30px", height: "30px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", zIndex: 2 }}
+                    >
+                      {inCart ? <Check size={16} /> : <Plus size={16} strokeWidth={3} />}
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                    <span style={{ background: "#2E7D32", color: "#fff", padding: "2px 6px", borderRadius: "4px", fontSize: "0.8rem", fontWeight: "700" }}>₹{item.price}</span>
+                    <span style={{ textDecoration: "line-through", color: "#9e9e9e", fontSize: "0.75rem" }}>₹{item.original_price}</span>
+                  </div>
+                  <div style={{ color: "#2E7D32", fontSize: "0.7rem", fontWeight: "700", marginBottom: "6px" }}>
+                    ₹{item.original_price - item.price} OFF
+                  </div>
+                  <div style={{ fontSize: "0.85rem", fontWeight: "600", color: "#333", marginBottom: "2px", lineHeight: "1.2" }}>{item.name}</div>
+                  <div style={{ fontSize: "0.7rem", color: "#757575" }}>{item.weight}</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="cart-summary">
