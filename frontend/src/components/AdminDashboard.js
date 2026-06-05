@@ -218,7 +218,7 @@ const AdminDashboard = ({ user, token }) => {
     }
     setAuthChecked(true);
     
-    if (!user?.is_admin) {
+    if (!(user?.is_admin || user?.roles?.dhaba === 'admin' || user?.roles?.dhaba === 'employee' || user?.roles?.cafe === 'admin' || user?.roles?.cafe === 'employee')) {
       navigate("/login?redirect=/admin");
       return;
     }
@@ -283,7 +283,7 @@ const AdminDashboard = ({ user, token }) => {
     );
   }
 
-  if (!user?.is_admin) {
+  if (!(user?.is_admin || user?.roles?.dhaba === 'admin' || user?.roles?.dhaba === 'employee' || user?.roles?.cafe === 'admin' || user?.roles?.cafe === 'employee')) {
     return null; // Will redirect
   }
 

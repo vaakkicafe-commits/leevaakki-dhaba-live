@@ -332,7 +332,7 @@ const Navbar = () => {
           </button>
 
           {/* Admin gear — only for authorized dhaba admins */}
-          {(user?.roles?.dhaba === 'admin' || user?.roles?.dhaba === 'employee') && (
+          {(user?.is_admin || user?.roles?.dhaba === 'admin' || user?.roles?.dhaba === 'employee' || user?.roles?.cafe === 'admin' || user?.roles?.cafe === 'employee') && (
             <button
               onClick={() => setAdminOpen(true)}
               title="Admin Panel"
@@ -360,7 +360,7 @@ const Navbar = () => {
                   <Link to="/orders" className="dropdown-item" onClick={() => setMenuOpen(false)}>
                     <Package size={18} /> My Orders
                   </Link>
-                  {(user.roles?.dhaba === 'admin' || user.roles?.dhaba === 'employee') && (
+                  {(user?.is_admin || user?.roles?.dhaba === 'admin' || user?.roles?.dhaba === 'employee' || user?.roles?.cafe === 'admin' || user?.roles?.cafe === 'employee') && (
                     <div className="dropdown-item" onClick={() => { setAdminOpen(true); setMenuOpen(false); }} style={{ cursor: "pointer" }}>
                       <Settings size={18} /> Admin Panel
                     </div>

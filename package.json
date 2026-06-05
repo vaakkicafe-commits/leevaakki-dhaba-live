@@ -5,7 +5,15 @@
   "scripts": {
     "build": "cd frontend && yarn install && yarn build"
   },
-  "keywords": ["react", "tailwind", "vercel", "restaurant"],
+  "keywords": [
+    "react",
+    "tailwind",
+    "vercel",
+    "restaurant"
+  ],
   "author": "Lee Vaakki Dhaba",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "jimp": "^1.6.1"
+  }
 }
